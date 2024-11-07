@@ -1,0 +1,114 @@
+body {
+    font-family: sans-serif;
+}
+
+#titleScreen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+}
+
+#titleScreen[hidden] {
+    display: none;
+}
+
+#title {
+    position: absolute;
+    top: 15vh;
+    font-size: 2rem;
+}
+
+button {
+    background: black;
+    color: white;
+    border: 2px solid #333;
+    border-radius: 0.25rem;
+    padding: 0.2rem;
+    cursor: pointer;
+}
+
+.bigButton {
+    padding: 1rem;
+}
+
+#welcomeScreen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+#welcomeScreen[hidden] {
+    display: none;
+}
+
+.catBox {
+    display: flex;
+    flex-direction: column;
+    border: 2px solid black;
+    width: 20vw;
+    border-radius: 0.1rem;
+    padding: 1rem;
+}
+
+.catGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+#catList {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+#game {
+    display: flex;
+    gap: 1rem;
+}
+
+#rightSide {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+#resourceGain {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid black;
+    border-radius: 0.1rem;
+    padding: 0 1rem;
+    width: 12rem;
+    height: 5rem;
+    box-sizing: border-box;
+}
+#raid {
+    border: 2px solid red;
+    border-radius: 0.1rem;
+    padding: 1rem;
+}
+
+@property --num {
+    syntax: "<integer>";
+    initial-value: 0;
+    inherits: false;
+}
+  
+
+#foodStock {
+    transition: --num 1s linear;
+    counter-reset: num var(--num);
+}
+#foodStock::after {
+    content: counter(num);
+    -webkit-user-select: text;
+    user-select: text;
+}
