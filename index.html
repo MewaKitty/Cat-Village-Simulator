@@ -9,19 +9,34 @@
             <b id="title">Cat Village Simulator</b>
             <button id="start" class="bigButton">Start</button>
         </div>
-        <div id="welcomeScreen"></div><div class="test"></div>
+        <div id="welcomeScreen"></div>
         <div id="game" hidden>
             <div id="catList"></div>
             <div id="rightSide">
-                <div id="resourceGain">
-                    <div>Hunted: <span id="foodHunted"></span></div>
-                    <div>Food Stock: <span id="foodStock"></span></div>
-                    <div>Defense: <span id="defense"></span></div>
+                    <div id="topBar">
+                    <div id="resourceGain">
+                        <div>Hunted: <span id="foodHunted"></span></div>
+                        <div>Food Stock: <span id="foodStock"></span></div>
+                        <div>Defense: <span id="defense"></span></div>
+                        <div>Research: <span id="researchPoints"></span></div>
+                    </div>
+                    <div id="toolsBox">
+                        <b>Tools</b>
+                        <p id="toolsNotUnlocked">You haven't unlocked any tools at the moment!</p>
+                    </div>
                 </div>
                 <div id="raid" hidden>
                     <span id="raidText"></span><br/><span id="raidTimer"></span>
                 </div>
             </div>
+            <div id="technology">
+                <b>Technology</b>
+                <div id="technologyList"></div>
+            </div>
+        </div>
+        <div id="gameOver" hidden>
+            <b>Game Over</b>
+            <p>Unfortunately, your village ran out of food.</p>
         </div>
     </body>
 </html>
