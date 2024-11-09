@@ -359,7 +359,18 @@ const createInventoryElem = (id: string) => {
     itemDiv.appendChild(itemTopInfo);
     const sellRow = document.createElement("div")
     if (items.find(item => item.id === id)?.usable) {
-        itemUse[id]?.();
+        const useButton = document.createElement("button");
+        useButton.textContent = "Use";
+        useButton.addEventListener("click", () => {
+            if (inventory[id] > 0) {
+                itemUse[id]?.()
+                inventory[id] -= 1;
+                if (inventory[id] === 0) {
+                    itemDiv.remove();
+                }
+            }
+        })
+        sellRow.appendChild(useButton)
     }
     for (const sellAmount of sellAmounts) {
         const sellButton = document.createElement("button");
