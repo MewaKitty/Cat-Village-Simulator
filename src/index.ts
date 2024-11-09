@@ -73,6 +73,16 @@ const technology = [
             "wood": 500
         },
         "requires": ["tree_chopper"]
+    },
+    {
+        "name": "Wooden Plank",
+        "description": "A fundamental material.",
+        "id": "wooden_plank",
+        "cost": 1000,
+        "resource_cost": {
+            "wood": 1000
+        },
+        "requires": ["basic_den"]
     }
 ];
 const craftingRecipes = [
@@ -83,6 +93,15 @@ const craftingRecipes = [
         "result": "basic_den",
         "resources": {
             "wood": 200
+        }
+    },
+    {
+        "name": "Wooden Plank",
+        "description": "Normal wood too weak for you? Make wooden planks!",
+        "id": "wooden_plank",
+        "result": "wooden_plank",
+        "resources": {
+            "wood": 500
         }
     }
 ]
@@ -188,6 +207,7 @@ const researchCallbacks: Record<string, () => void> = {
                         const itemSpan = document.getElementById("inventory." + itemId)!;
                         itemSpan.style.setProperty("--num", inventory[itemId] + "")
                         itemSpan.setAttribute("aria-label", inventory[itemId] + "");
+                        if (inventory[itemId] === 0) itemSpan.remove();
                     }
                     inventory[recipe.result] ??= 0;
                     inventory[recipe.result] += 1;
@@ -201,7 +221,10 @@ const researchCallbacks: Record<string, () => void> = {
                 })
             }
         })
-    }
+    },
+    "wooden_plank": () => {
+        craftable.push("wooden_plank")
+    },
 };
 const items = [
     {
@@ -214,13 +237,18 @@ const items = [
         "name": "Basic Den",
         "sell": 100,
         "usable": true
-    }
+    },
+    {
+        "id": "wooden_plank",
+        "name": "Wooden Plank",
+        "sell": 500
+    },
 ];
 const itemUse: Record<string, () => void> = {
     "basic_den": () => {
         comfort += 1;
     }
-}
+};
 const createNewRole = (roleName: string) => {
     roles.push(roleName)
     for (const cat of cats) {
@@ -256,12 +284,12 @@ document.getElementById("start")?.addEventListener("click", () => {
     console.log("click")
     document.getElementById("titleScreen")!.hidden = true;
     document.getElementById("welcomeScreen")!.innerHTML = `<b>Welcome to Cat Village Simulator</b><p>To get started, choose the cats who wil join you.</p>`
-    const recruitCountSpan = document.createElement("span")
-    recruitCountSpan.textContent = "0/3 cats recruited"
-    document.getElementById("welcomeScreen")!.appendChild(recruitCountSpan)
-    const catGridElement = document.createElement("div")
-    catGridElement.classList.add("catGrid")
-    document.getElementById("welcomeScreen")!.appendChild(catGridElement)
+    const recruitCountSpan = document.createElement("span");
+    recruitCountSpan.textContent = "0/3 cats recruited";
+    document.getElementById("welcomeScreen")!.appendChild(recruitCountSpan);
+    const catGridElement = document.createElement("div");
+    catGridElement.classList.add("catGrid");
+    document.getElementById("welcomeScreen")!.appendChild(catGridElement);
     const recruitedCats: PartialCat[] = []
     for (let i = 0; i < 12; i++) {
         const catElement = document.createElement("div");
@@ -319,8 +347,17 @@ document.getElementById("start")?.addEventListener("click", () => {
             researchButton.disabled = true;
             researchButton.id = technologyItem.id + ".research";
             researchButton.addEventListener("click", () => {
-                if (technologyItem.cost > researchPoints && (technologyItem.resource_cost ? !Object.entries(technologyItem.resource_cost).reduce((l, [id, amountRequired]) => l && inventory[id] >= amountRequired, true) : false)) return;
+                if (technologyItem.cost > researchPoints || (technologyItem.resource_cost ? !Object.entries(technologyItem.resource_cost).reduce((l, [id, amountRequired]) => l && inventory[id] >= amountRequired, true) : false)) return;
                 researchPoints -= technologyItem.cost;
+                if (technologyItem.resource_cost) {
+                    for (const [itemId, quantity] of Object.entries(technologyItem.resource_cost)) {
+                        inventory[itemId] -= quantity;
+                        const itemSpan = document.getElementById("inventory." + itemId)!;
+                        itemSpan.style.setProperty("--num", inventory[itemId] + "");
+                        itemSpan.setAttribute("aria-label", inventory[itemId] + "");
+                        if (inventory[itemId] === 0) itemSpan.remove();
+                    }
+                }
                 researched[technologyItem.id] = true;
                 technologyElem.hidden = true;
                 researchCallbacks[technologyItem.id]();
@@ -338,7 +375,7 @@ document.getElementById("start")?.addEventListener("click", () => {
 let raid = false;
 let foodStock = [];
 let maxFoodStock = 1000;
-let researchPoints = 1000;
+let researchPoints = 10000;
 let starvationPoints = 0;
 let comfort = 0;
 let lastCatStarve = Date.now();
@@ -476,7 +513,7 @@ const tick = () => {
     }
     for (const technologyItem of technology) {
         const technologyElem = document.getElementById(technologyItem.id + ".research") as HTMLButtonElement
-        technologyElem.disabled = technologyItem.cost > researchPoints && (technologyItem.resource_cost ? !Object.entries(technologyItem.resource_cost).reduce((l, [id, amountRequired]) => l && inventory[id] >= amountRequired, false) : false);
+        technologyElem.disabled = technologyItem.cost > researchPoints || (technologyItem.resource_cost ? !Object.entries(technologyItem.resource_cost).reduce((l, [id, amountRequired]) => l && inventory[id] >= amountRequired, true) : false);
     }
     const woodGained = cats.filter(cat => cat.role === "Tree Chopper").reduce((l, c, i) => l + Math.floor(Math.random() * 5 * Math.floor(c.abilities.strength / 5)), 0)
     if (woodGained) {
