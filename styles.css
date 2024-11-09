@@ -113,15 +113,34 @@ button:disabled {
     flex-direction: column;
 }
 
+#toolsRow {
+    display: flex;
+    gap: 1rem;
+}
+
+.closeButton {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    cursor: pointer;
+}
+
 #raid {
     border: 2px solid red;
     border-radius: 0.1rem;
     padding: 1rem;
 }
-#recruitmentDiv {
-    border: 2px solid darkblue;
+#recruitmentDiv, #craftingDiv {
     border-radius: 0.1rem;
     padding: 1rem;
+    position: relative;
+}
+
+#recruitmentDiv {
+    border: 2px solid darkblue;
+}
+#craftingDiv {
+    border: 2px solid darkgoldenrod;
 }
 
 @property --num {
@@ -131,11 +150,11 @@ button:disabled {
 }
   
 
-#foodStock, #researchPoints, .inventoryItemAmount {
+#foodStock, #researchPoints, .inventoryItemAmount, #comfort {
     transition: --num 1s linear;
     counter-reset: num var(--num);
 }
-#foodStock::after, #researchPoints::after, .inventoryItemAmount::after {
+#foodStock::after, #researchPoints::after, .inventoryItemAmount::after, #comfort::after {
     content: counter(num);
     -webkit-user-select: text;
     user-select: text;
