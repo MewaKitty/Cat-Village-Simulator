@@ -56,7 +56,14 @@ const technology = [
         "id": "recruitment_propaganda",
         "cost": 100,
         "requires": ["basic_recruitment"]
-    }
+    },
+    {
+        "name": "Tree Chopper",
+        "description": "Make your cats chop down trees for wood!",
+        "id": "tree_chopper",
+        "cost": 300,
+        "requires": ["basic_recruitment"]
+    },
 ];
 let recruitmentCooldown = 60;
 const researchCallbacks: Record<string, () => void> = {
@@ -104,12 +111,32 @@ const researchCallbacks: Record<string, () => void> = {
     },
     "recruitment_propaganda": () => {
         recruitmentCooldown = 45;
+    },
+    "tree_chopper": () => {
+        createNewRole("Tree Chopper")
     }
 };
+const items = [
+    {
+        "id": "wood",
+        "name": "Wood",
+        "sell": 1
+    }
+]
+const createNewRole = (roleName: string) => {
+    roles.push(roleName)
+    for (const cat of cats) {
+        const catElement = document.getElementById(cat.id + ".catBox")!;
+        const roleOption = document.createElement("option")
+        roleOption.textContent = roleName;
+        catElement.querySelector("select")?.appendChild(roleOption);
+    }
+}
 const researched: Record<string, boolean> = {};
 let cats: Cat[] = [];
 const createCatElement = (cat: Cat) => {
     const catElement = document.createElement("div");
+    catElement.id = cat.id + ".catBox";
     catElement.classList.add("catBox");
     catElement.innerHTML = `<b>${cat.name}</b>
     ${Object.entries(cat.abilities).map(([abilityId, abilityNumber]) => {
@@ -210,7 +237,37 @@ document.getElementById("start")?.addEventListener("click", () => {
 let raid = false;
 let foodStock = [];
 let maxFoodStock = 1000;
-let researchPoints = 50;
+let researchPoints = 500;
+
+const inventory: Record<string, number> = {};
+
+const sellAmounts = [1, 10, 100]
+
+const createInventoryElem = (id: string) => {
+    const itemDiv = document.createElement("div");
+    const itemTopInfo = document.createElement("div")
+    itemTopInfo.textContent = `${items.find(item => item.id === id)?.name} (${items.find(item => item.id === id)?.sell} research each): `
+    const itemSpan = document.createElement("span")
+    itemSpan.classList.add("inventoryItemAmount")
+    itemSpan.id = "inventory." + id
+    itemTopInfo.appendChild(itemSpan)
+    itemDiv.appendChild(itemTopInfo);
+    const sellRow = document.createElement("div")
+    for (const sellAmount of sellAmounts) {
+        const sellButton = document.createElement("button");
+        sellButton.textContent = "Sell " + sellAmount + "x";
+        sellButton.addEventListener("click", () => {
+            inventory[id] -= sellAmount;
+            researchPoints += sellAmount * (items.find(item => item.id === id)?.sell ?? 0);
+            itemSpan.style.setProperty("--num", inventory[id] + "")
+            itemSpan.setAttribute("aria-label", inventory[id] + "")
+        })
+        sellRow.appendChild(sellButton)
+    }
+    itemDiv.appendChild(sellRow);
+    document.getElementById("inventory")?.appendChild(itemDiv)
+}
+
 const tick = () => {
     const foodHunted = cats.filter(cat => cat.role === "Hunter").reduce((l, c, i) => l + Math.floor(Math.random() * c.abilities.strength) + c.abilities.strength, 0);
     const requiredFood = cats.length * 10 * (raid ? 1.5 : 1)
@@ -244,11 +301,12 @@ const tick = () => {
     document.getElementById("foodHunted")!.textContent = `${foodHunted}/${requiredFood}`
     document.getElementById("foodStock")!.style.setProperty("--num", foodStock.reduce((l, c, i) => l + c, 0) + "")
     document.getElementById("foodStock")!.setAttribute("aria-label", foodStock.reduce((l, c, i) => l + c, 0) + "")
-    document.getElementById("defense")!.textContent = cats.filter(cat => cat.role === "Guard").reduce((l, c, i) => l + Math.floor((c.abilities.strength + c.abilities.agility) / 5), 0) + ""
+    const defense = cats.filter(cat => cat.role === "Guard").reduce((l, c, i) => l + Math.floor((c.abilities.strength + c.abilities.agility) / 5), 0)
+    document.getElementById("defense")!.textContent = defense + ""
     researchPoints += cats.filter(cat => cat.role === "Researcher").reduce((l, c, i) => l + Math.floor(c.abilities.intelligence * Math.random() / 5), 0)
     document.getElementById("researchPoints")!.style.setProperty("--num", researchPoints + "")
     document.getElementById("researchPoints")!.setAttribute("aria-label", researchPoints + "")
-    if (foodStock.reduce((l, c, i) => l + c, 0) > 500 && Math.random() < 0.01) {
+    if (foodStock.reduce((l, c, i) => l + c, 0) > 500 && Math.random() < 0.01 / defense) {
         document.getElementById("raid")!.hidden = false;
         document.getElementById("raidText")!.textContent = "You are being raided. You will use up 1.5x the amount of prey during the raid."
         document.getElementById("raidTimer")!.textContent = "30s left"
@@ -267,5 +325,16 @@ const tick = () => {
     for (const technologyItem of technology) {
         const technologyElem = document.getElementById(technologyItem.id + ".research") as HTMLButtonElement
         technologyElem.disabled = technologyItem.cost > researchPoints;
+    }
+    const woodGained = cats.filter(cat => cat.role === "Tree Chopper").reduce((l, c, i) => l + Math.floor(Math.random() * 5 * Math.floor(c.abilities.strength / 5)), 0)
+    if (woodGained) {
+        inventory.wood ??= 0;
+        inventory.wood += woodGained;
+        if (!document.getElementById("inventory.wood")) {
+            createInventoryElem("wood")
+        }
+        const woodSpan = document.getElementById("inventory.wood")!
+        woodSpan.style.setProperty("--num", inventory.wood + "")
+        woodSpan.setAttribute("aria-label", inventory.wood + "")
     }
 }
