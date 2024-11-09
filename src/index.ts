@@ -386,7 +386,7 @@ const tick = () => {
         document.getElementById("gameOver")!.hidden = false;
         return;
     }
-    const foodHunted = Math.floor(cats.filter(cat => cat.role === "Hunter").reduce((l, c, i) => l + Math.floor(Math.random() * c.abilities.strength) + c.abilities.strength, 0) * ((comfort + 1) / 100));
+    const foodHunted = Math.floor(cats.filter(cat => cat.role === "Hunter").reduce((l, c, i) => l + Math.floor(Math.random() * c.abilities.strength) + c.abilities.strength, 0) * ((comfort / 100) + 1));
     const requiredFood = cats.length * 10 * (raid ? 1.5 : 1)
     if (foodHunted - requiredFood > 0) {
         if (starvationPoints > 0) {

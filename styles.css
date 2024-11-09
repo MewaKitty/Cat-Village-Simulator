@@ -103,7 +103,7 @@ button:disabled {
     border: 2px solid black;
     border-radius: 0.1rem;
     padding: 0 1rem;
-    height: 5rem;
+    height: 8rem;
     box-sizing: border-box;
     width: calc(100% / 3);
 }
