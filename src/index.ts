@@ -588,6 +588,7 @@ document.getElementById("continue")?.addEventListener("click", () => {
     starvationPoints = save.starvationPoints;
     comfort = save.comfort;
     inventory = save.inventory;
+    landSize = save.landSize;
     for (const cat of cats) {
         createCatElement(cat);
     };
@@ -650,15 +651,23 @@ let season = 0;
 const seasonLength = 15 * 60;
 let secondsUntilNextSeason = seasonLength;
 
+let landSize = 1;
+
 let inventory: Record<string, number> = {};
 
 inventory.wood = 100000000;
 
-const sellAmounts = [1, 10, 100]
+document.getElementById("expand")!.addEventListener("click", () => {
+    if (researchPoints < 100 * 3 ** landSize) return;
+    researchPoints -= 100 * 3 ** landSize;
+    landSize += 1;
+})
+
+const sellAmounts = [1, 10, 100];
 
 const createInventoryElem = (id: string) => {
     const itemDiv = document.createElement("div");
-    itemDiv.id = "inventory." + id + ".div"
+    itemDiv.id = "inventory." + id + ".div";
     const itemTopInfo = document.createElement("div")
     itemTopInfo.textContent = `${items.find(item => item.id === id)?.name} (${items.find(item => item.id === id)?.sell} research each): `
     const itemSpan = document.createElement("span")
@@ -709,7 +718,7 @@ const tick = () => {
         return;
     }
     let waterLeft = inventory.water_cup ?? 0;
-    const foodHunted = Math.floor((seasons[season].cold ? 0.1 : 1) * Math.floor(cats.filter(cat => cat.role === "Hunter" && (seasons[season].hot ? --waterLeft > 0 : true)).reduce((l, c, i) => l + Math.floor(Math.random() * c.abilities.strength) + c.abilities.strength, 0) * ((comfort / 100) + 1)));
+    const foodHunted = Math.min(50 * 2 ** landSize, Math.floor((seasons[season].cold ? 0.1 : 1) * Math.floor(cats.filter(cat => cat.role === "Hunter" && (seasons[season].hot ? --waterLeft > 0 : true)).reduce((l, c, i) => l + Math.floor(Math.random() * c.abilities.strength) + c.abilities.strength, 0) * ((comfort / 100) + 1))));
     console.log(waterLeft)
     const requiredFood = cats.length * 10 * (raid ? 1.5 : 1)
     if (foodHunted - requiredFood > 0) {
@@ -803,6 +812,11 @@ const tick = () => {
     document.getElementById("seasonName")!.textContent = seasons[season].name;
     document.getElementById("seasonDescription")!.innerHTML = seasons[season].description + "<br/<br/>" + secondsUntilNextSeason + " seconds left until " + (season === seasons.length - 1 ? seasons[0].name : seasons[season + 1].name);
 
+    document.getElementById("landSize")!.textContent = landSize + ""
+    document.getElementById("maxPrey")!.textContent = 50 * 2 ** landSize + ""
+    document.getElementById("expand")!.textContent = "Expand: " + 100 * 3 ** landSize + " research points";
+    (document.getElementById("expand") as HTMLButtonElement).disabled = researchPoints < 100 * 3 ** landSize
+
     if (inventory.water_cup) {
         inventory.water_cup = Math.max(0, waterLeft);
         const waterCupSpan = document.getElementById("inventory.water_cup")!
@@ -853,5 +867,5 @@ const tick = () => {
         woodPlankSpan.setAttribute("aria-label", inventory.wooden_plank + "")
         inventory.wood -= woodenPlanksGained * 500
     }
-    localStorage.setItem("save", JSON.stringify({researched, cats, foodStock, researchPoints, starvationPoints, comfort, inventory}))
+    localStorage.setItem("save", JSON.stringify({researched, cats, foodStock, researchPoints, starvationPoints, comfort, inventory, landSize}))
 }
