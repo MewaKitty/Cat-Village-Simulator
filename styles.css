@@ -108,6 +108,12 @@ button:disabled {
     width: calc(100% / 3);
 }
 
+#game #rightSide #topBar #inventory {
+    padding: 1rem;
+    overflow-y: scroll;
+    justify-content: start;
+};
+
 #inventory > div {
     display: flex;
     flex-direction: column;

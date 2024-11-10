@@ -83,7 +83,27 @@ const technology = [
             "wood": 1000
         },
         "requires": ["basic_den"]
-    }
+    },
+    {
+        "name": "Wooden Den",
+        "description": "If the basic den too basic for you, make a wooden den.",
+        "id": "wooden_den",
+        "cost": 1500,
+        "resource_cost": {
+            "wooden_plank": 100
+        },
+        "requires": ["wooden_plank"]
+    },
+    {
+        "name": "Wooden Recruitboard",
+        "description": "If you want more cats, this is for you.",
+        "id": "wooden_recruitboard",
+        "cost": 15000,
+        "resource_cost": {
+            "wooden_plank": 500
+        },
+        "requires": ["recruitment_propaganda", "wooden_plank"]
+    },
 ];
 const craftingRecipes = [
     {
@@ -103,10 +123,20 @@ const craftingRecipes = [
         "resources": {
             "wood": 500
         }
-    }
+    },
+    {
+        "name": "Wooden Den",
+        "description": "Want more comfort? Make a wooden den.",
+        "id": "wooden_den",
+        "result": "wooden_den",
+        "resources": {
+            "wooden_plank": 20
+        }
+    },
 ]
 const craftable: string[] = [];
 let recruitmentCooldown = 60;
+const craftAmounts = [1, 10, 100]
 const researchCallbacks: Record<string, () => void> = {
     "basic_recruitment": () => {
         document.getElementById("toolsNotUnlocked")!.hidden = true;
@@ -162,7 +192,7 @@ const researchCallbacks: Record<string, () => void> = {
         });
     },
     "recruitment_propaganda": () => {
-        recruitmentCooldown = 45;
+        recruitmentCooldown -= 15;
     },
     "tree_chopper": () => {
         createNewRole("Tree Chopper")
@@ -195,35 +225,43 @@ const researchCallbacks: Record<string, () => void> = {
                 recipeDiv.innerHTML = `<b>${recipe.name}</b>
                 <div>${recipe.description}</div>
                 <div>${Object.entries(recipe.resources).map(([itemId, quantity]) => items.find(item => item.id === itemId)?.name + ": " + quantity)}`
-                const craftButton = document.createElement("button");
-                craftButton.textContent = "Craft"
-                recipeDiv.appendChild(craftButton);
-                recipeListDiv.appendChild(recipeDiv)
-                craftButton.addEventListener("click", () => {
-                    const craftable = Object.entries(recipe.resources).reduce((l, [itemId, quantity]) => l && inventory[itemId] >= quantity, true);
-                    if (!craftable) return craftButton.textContent = "Craft - unaffordable!"
-                    for (const [itemId, quantity] of Object.entries(recipe.resources)) {
-                        inventory[itemId] -= quantity;
-                        const itemSpan = document.getElementById("inventory." + itemId)!;
-                        itemSpan.style.setProperty("--num", inventory[itemId] + "")
-                        itemSpan.setAttribute("aria-label", inventory[itemId] + "");
-                        if (inventory[itemId] === 0) itemSpan.remove();
-                    }
-                    inventory[recipe.result] ??= 0;
-                    inventory[recipe.result] += 1;
-                    
-                    if (!document.getElementById("inventory." + recipe.result)) {
-                        createInventoryElem(recipe.result)
-                    }
-                    const woodSpan = document.getElementById("inventory." + recipe.result)!
-                    woodSpan.style.setProperty("--num", inventory[recipe.result] + "")
-                    woodSpan.setAttribute("aria-label", inventory[recipe.result] + "")
-                })
+                for (const craftAmount of craftAmounts) {
+                    const craftButton = document.createElement("button");
+                    craftButton.textContent = "Craft " + craftAmount + "x"
+                    recipeDiv.appendChild(craftButton);
+                    recipeListDiv.appendChild(recipeDiv)
+                    craftButton.addEventListener("click", () => {
+                        const craftable = Object.entries(recipe.resources).reduce((l, [itemId, quantity]) => l && inventory[itemId] >= quantity * craftAmount, true);
+                        if (!craftable) return craftButton.textContent = "Craft - unaffordable!"
+                        for (const [itemId, quantity] of Object.entries(recipe.resources)) {
+                            inventory[itemId] -= quantity * craftAmount;
+                            const itemSpan = document.getElementById("inventory." + itemId)!;
+                            itemSpan.style.setProperty("--num", inventory[itemId] + "")
+                            itemSpan.setAttribute("aria-label", inventory[itemId] + "");
+                            if (inventory[itemId] === 0) itemSpan.remove();
+                        }
+                        inventory[recipe.result] ??= 0;
+                        inventory[recipe.result] += craftAmount;
+                        
+                        if (!document.getElementById("inventory." + recipe.result)) {
+                            createInventoryElem(recipe.result)
+                        }
+                        const woodSpan = document.getElementById("inventory." + recipe.result)!
+                        woodSpan.style.setProperty("--num", inventory[recipe.result] + "")
+                        woodSpan.setAttribute("aria-label", inventory[recipe.result] + "")
+                    })
+                }
             }
         })
     },
     "wooden_plank": () => {
         craftable.push("wooden_plank")
+    },
+    "wooden_den": () => {
+        craftable.push("wooden_den")
+    },
+    "wooden_recruitboard": () => {
+        recruitmentCooldown -= 20
     },
 };
 const items = [
@@ -243,11 +281,20 @@ const items = [
         "name": "Wooden Plank",
         "sell": 500
     },
+    {
+        "id": "wooden_den",
+        "name": "Wooden Den",
+        "sell": 2000,
+        "usable": true
+    },
 ];
 const itemUse: Record<string, () => void> = {
     "basic_den": () => {
         comfort += 1;
-    }
+    },
+    "wooden_den": () => {
+        comfort += 10;
+    },
 };
 const createNewRole = (roleName: string) => {
     roles.push(roleName)
@@ -363,7 +410,8 @@ document.getElementById("start")?.addEventListener("click", () => {
                 researchCallbacks[technologyItem.id]();
                 for (const technologyNextItem of technology) {
                     if (!technologyNextItem.requires || !technologyNextItem.requires.includes(technologyItem.id)) continue;
-                    document.getElementById(technologyNextItem.id + ".div")!.hidden = false;
+                    const canResearch = technologyNextItem.requires.reduce((l, c) => l && researched[c], true)
+                    if (canResearch) document.getElementById(technologyNextItem.id + ".div")!.hidden = false;
                 };
             })
             technologyElem.appendChild(researchButton);
@@ -381,6 +429,8 @@ let comfort = 0;
 let lastCatStarve = Date.now();
 
 const inventory: Record<string, number> = {};
+
+inventory.wood = 100000000;
 
 const sellAmounts = [1, 10, 100]
 
@@ -402,6 +452,8 @@ const createInventoryElem = (id: string) => {
             if (inventory[id] > 0) {
                 itemUse[id]?.()
                 inventory[id] -= 1;
+                itemSpan.style.setProperty("--num", inventory[id] + "")
+                itemSpan.setAttribute("aria-label", inventory[id] + "");
                 if (inventory[id] === 0) {
                     itemDiv.remove();
                 }
