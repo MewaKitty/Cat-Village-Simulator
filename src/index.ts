@@ -43,7 +43,15 @@ const randomCat = () => {
 
 const roles = ["Hunter", "Guard", "Researcher"];
 
-const technology = [
+interface Technology {
+    name: string,
+    description: string,
+    id: string,
+    cost: number,
+    resource_cost?: Record<string, number>,
+    requires?: string[]
+}
+const technology: Technology[] = [
     {
         "name": "Basic Recruitment",
         "description": "Recruit more cats to your village!",
@@ -232,7 +240,7 @@ const researchCallbacks: Record<string, () => void> = {
                     recipeListDiv.appendChild(recipeDiv)
                     craftButton.addEventListener("click", () => {
                         const craftable = Object.entries(recipe.resources).reduce((l, [itemId, quantity]) => l && inventory[itemId] >= quantity * craftAmount, true);
-                        if (!craftable) return craftButton.textContent = "Craft - unaffordable!"
+                        if (!craftable) return craftButton.textContent = "Craft " + craftAmount + "x - unaffordable!"
                         for (const [itemId, quantity] of Object.entries(recipe.resources)) {
                             inventory[itemId] -= quantity * craftAmount;
                             const itemSpan = document.getElementById("inventory." + itemId)!;
@@ -305,7 +313,7 @@ const createNewRole = (roleName: string) => {
         catElement.querySelector("select")?.appendChild(roleOption);
     }
 }
-const researched: Record<string, boolean> = {};
+let researched: Record<string, boolean> = {};
 let cats: Cat[] = [];
 const createCatElement = (cat: Cat) => {
     const catElement = document.createElement("div");
@@ -327,6 +335,45 @@ const createCatElement = (cat: Cat) => {
         cat.role = roleSelect.options[roleSelect.selectedIndex].text;
     });
 };
+
+const setupTechnologyItem = (technologyItem: Technology) => {
+
+    const technologyElem = document.createElement("div");
+    technologyElem.id = technologyItem.id + ".div";
+    technologyElem.innerHTML = `<b>${technologyItem.name}</b>
+    <p>${technologyItem.description}</p>
+    <span>Cost: ${technologyItem.cost} research points${technologyItem.resource_cost ? "<br/>" + Object.entries(technologyItem.resource_cost).map(([id, quantity]) => 
+        items.find(item => item.id === id)?.name + ": " + quantity
+    ).join("<br/>") : ""}</span>`;
+    if (technologyItem.requires) technologyElem.hidden = true;
+    const researchButton = document.createElement("button");
+    researchButton.textContent = "Research";
+    researchButton.disabled = true;
+    researchButton.id = technologyItem.id + ".research";
+    researchButton.addEventListener("click", () => {
+        if (technologyItem.cost > researchPoints || (technologyItem.resource_cost ? !Object.entries(technologyItem.resource_cost).reduce((l, [id, amountRequired]) => l && inventory[id] >= amountRequired, true) : false)) return;
+        researchPoints -= technologyItem.cost;
+        if (technologyItem.resource_cost) {
+            for (const [itemId, quantity] of Object.entries(technologyItem.resource_cost)) {
+                inventory[itemId] -= quantity;
+                const itemSpan = document.getElementById("inventory." + itemId)!;
+                itemSpan.style.setProperty("--num", inventory[itemId] + "");
+                itemSpan.setAttribute("aria-label", inventory[itemId] + "");
+                if (inventory[itemId] === 0) itemSpan.remove();
+            }
+        }
+        researched[technologyItem.id] = true;
+        technologyElem.hidden = true;
+        researchCallbacks[technologyItem.id]();
+        for (const technologyNextItem of technology) {
+            if (!technologyNextItem.requires || !technologyNextItem.requires.includes(technologyItem.id)) continue;
+            const canResearch = technologyNextItem.requires.reduce((l, c) => l && researched[c], true)
+            if (canResearch) document.getElementById(technologyNextItem.id + ".div")!.hidden = false;
+        };
+    })
+    technologyElem.appendChild(researchButton);
+    document.getElementById("technologyList")?.appendChild(technologyElem)
+}
 document.getElementById("start")?.addEventListener("click", () => {
     console.log("click")
     document.getElementById("titleScreen")!.hidden = true;
@@ -381,54 +428,58 @@ document.getElementById("start")?.addEventListener("click", () => {
         };
         setInterval(tick, 1000);
         for (const technologyItem of technology) {
-            const technologyElem = document.createElement("div");
-            technologyElem.id = technologyItem.id + ".div";
-            technologyElem.innerHTML = `<b>${technologyItem.name}</b>
-            <p>${technologyItem.description}</p>
-            <span>Cost: ${technologyItem.cost} research points${technologyItem.resource_cost ? "<br/>" + Object.entries(technologyItem.resource_cost).map(([id, quantity]) => 
-                items.find(item => item.id === id)?.name + ": " + quantity
-            ).join("<br/>") : ""}</span>`;
-            if (technologyItem.requires) technologyElem.hidden = true;
-            const researchButton = document.createElement("button");
-            researchButton.textContent = "Research";
-            researchButton.disabled = true;
-            researchButton.id = technologyItem.id + ".research";
-            researchButton.addEventListener("click", () => {
-                if (technologyItem.cost > researchPoints || (technologyItem.resource_cost ? !Object.entries(technologyItem.resource_cost).reduce((l, [id, amountRequired]) => l && inventory[id] >= amountRequired, true) : false)) return;
-                researchPoints -= technologyItem.cost;
-                if (technologyItem.resource_cost) {
-                    for (const [itemId, quantity] of Object.entries(technologyItem.resource_cost)) {
-                        inventory[itemId] -= quantity;
-                        const itemSpan = document.getElementById("inventory." + itemId)!;
-                        itemSpan.style.setProperty("--num", inventory[itemId] + "");
-                        itemSpan.setAttribute("aria-label", inventory[itemId] + "");
-                        if (inventory[itemId] === 0) itemSpan.remove();
-                    }
-                }
-                researched[technologyItem.id] = true;
-                technologyElem.hidden = true;
-                researchCallbacks[technologyItem.id]();
-                for (const technologyNextItem of technology) {
-                    if (!technologyNextItem.requires || !technologyNextItem.requires.includes(technologyItem.id)) continue;
-                    const canResearch = technologyNextItem.requires.reduce((l, c) => l && researched[c], true)
-                    if (canResearch) document.getElementById(technologyNextItem.id + ".div")!.hidden = false;
-                };
-            })
-            technologyElem.appendChild(researchButton);
-            document.getElementById("technologyList")?.appendChild(technologyElem)
+            setupTechnologyItem(technologyItem)
         }
     })
 });
 
+if (!localStorage.getItem("save")) document.getElementById("continue")!.hidden = true;
+
+document.getElementById("continue")?.addEventListener("click", () => {
+    const save = JSON.parse(localStorage.getItem("save")!) //, JSON.stringify({researched, cats, foodStock, researchPoints, starvationPoints, comfort, inventory}))
+    researched = save.researched;
+    cats = save.cats;
+    foodStock = save.foodStock;
+    researchPoints = save.researchPoints
+    starvationPoints = save.starvationPoints
+    comfort = save.comfort
+    inventory = save.inventory
+    for (const cat of cats) {
+        createCatElement(cat);
+    }
+    for (const technologyItem of technology) {
+        setupTechnologyItem(technologyItem)
+        if (technologyItem.requires) {
+            const canResearch = technologyItem.requires.reduce((l, c) => l && researched[c], true)
+            if (canResearch) document.getElementById(technologyItem.id + ".div")!.hidden = false;
+        }
+        if (technologyItem.id in researched) {
+            document.getElementById(technologyItem.id + ".div")!.hidden = true;
+        }
+    }
+    for (const itemId of Object.keys(inventory)) {
+        createInventoryElem(itemId)
+        const itemSpan = document.getElementById("inventory." + itemId)!
+        itemSpan.style.setProperty("--num", inventory[itemId] + "")
+        itemSpan.setAttribute("aria-label", inventory[itemId] + "")
+    }
+    for (const researchId of Object.keys(researched)) {
+        researchCallbacks[researchId]();
+    }
+    document.getElementById("titleScreen")!.hidden = true;
+    document.getElementById("game")!.hidden = false;
+    setInterval(tick, 1000);
+});
+
 let raid = false;
-let foodStock = [];
+let foodStock: number[] = [];
 let maxFoodStock = 1000;
 let researchPoints = 10000;
 let starvationPoints = 0;
 let comfort = 0;
 let lastCatStarve = Date.now();
 
-const inventory: Record<string, number> = {};
+let inventory: Record<string, number> = {};
 
 inventory.wood = 100000000;
 
@@ -586,4 +637,5 @@ const tick = () => {
             (sellButton as HTMLButtonElement).disabled = inventory[item.id] < sellAmount;
         })
     }
+    localStorage.setItem("save", JSON.stringify({researched, cats, foodStock, researchPoints, starvationPoints, comfort, inventory}))
 }

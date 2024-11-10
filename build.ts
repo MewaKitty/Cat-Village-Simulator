@@ -1,6 +1,7 @@
 await Bun.build({
     entrypoints: ["./src/index.ts"],
     outdir: "./build",
+    sourcemap: "linked"
 });
 
 for (const file of ["index.html", "styles.css", "cat_names.txt"]) {
