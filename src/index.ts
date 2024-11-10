@@ -49,7 +49,8 @@ interface Technology {
     id: string,
     cost: number,
     resource_cost?: Record<string, number>,
-    requires?: string[]
+    requires?: string[],
+    class?: string
 }
 const technology: Technology[] = [
     {
@@ -70,7 +71,8 @@ const technology: Technology[] = [
         "description": "Make your cats chop down trees for wood!",
         "id": "tree_chopper",
         "cost": 300,
-        "requires": ["basic_recruitment"]
+        "requires": ["basic_recruitment"],
+        "class": "wood"
     },
     {
         "name": "Basic Den",
@@ -80,14 +82,16 @@ const technology: Technology[] = [
         "resource_cost": {
             "wood": 500
         },
-        "requires": ["tree_chopper"]
+        "requires": ["tree_chopper"],
+        "class": "wood"
     },
     {
         "name": "Water Cup",
         "description": "Create cups for cats to drink out of.",
         "id": "water_cup",
         "cost": 300,
-        "requires": ["basic_den"]
+        "requires": ["basic_den"],
+        "class": "wood"
     },
     {
         "name": "Wooden Plank",
@@ -97,7 +101,8 @@ const technology: Technology[] = [
         "resource_cost": {
             "wood": 1000
         },
-        "requires": ["basic_den"]
+        "requires": ["basic_den"],
+        "class": "wood"
     },
     {
         "name": "Wooden Den",
@@ -107,7 +112,8 @@ const technology: Technology[] = [
         "resource_cost": {
             "wooden_plank": 100
         },
-        "requires": ["wooden_plank"]
+        "requires": ["wooden_plank"],
+        "class": "wood"
     },
     {
         "name": "Wooden Recruit-board",
@@ -117,7 +123,8 @@ const technology: Technology[] = [
         "resource_cost": {
             "wooden_plank": 500
         },
-        "requires": ["recruitment_propaganda", "wooden_plank"]
+        "requires": ["recruitment_propaganda", "wooden_plank"],
+        "class": "wood"
     },
     {
         "name": "Rock Mining",
@@ -127,7 +134,8 @@ const technology: Technology[] = [
         "resource_cost": {
             "wooden_plank": 100
         },
-        "requires": ["wooden_plank"]
+        "requires": ["wooden_plank"],
+        "class": "stone"
     },
     {
         "name": "Stone Bricks",
@@ -137,7 +145,8 @@ const technology: Technology[] = [
         "resource_cost": {
             "stone": 1000
         },
-        "requires": ["rock_mining"]
+        "requires": ["rock_mining"],
+        "class": "stone"
     },
     {
         "name": "Stone House",
@@ -147,7 +156,8 @@ const technology: Technology[] = [
         "resource_cost": {
             "stone_bricks": 1000
         },
-        "requires": ["stone_bricks"]
+        "requires": ["stone_bricks"],
+        "class": "stone"
     },
     {
         "name": "Stone Recruit-board",
@@ -157,7 +167,8 @@ const technology: Technology[] = [
         "resource_cost": {
             "stone_bricks": 5000
         },
-        "requires": ["wooden_recruitboard", "stone_bricks"]
+        "requires": ["wooden_recruitboard", "stone_bricks"],
+        "class": "stone"
     },
     {
         "name": "Wood Press",
@@ -168,7 +179,8 @@ const technology: Technology[] = [
             "wooden_plank": 1000,
             "stone_bricks": 5000
         },
-        "requires": ["stone_bricks"]
+        "requires": ["stone_bricks"],
+        "class": "wood"
     },
 ];
 const craftingRecipes = [
@@ -490,6 +502,7 @@ const setupTechnologyItem = (technologyItem: Technology) => {
         items.find(item => item.id === id)?.name + ": " + quantity
     ).join("<br/>") : ""}</span>`;
     if (technologyItem.requires) technologyElem.hidden = true;
+    if (technologyItem.class) technologyElem.classList.add(technologyItem.class);
     const researchButton = document.createElement("button");
     researchButton.textContent = "Research";
     researchButton.disabled = true;
@@ -630,21 +643,25 @@ let lastCatStarve = Date.now();
 const seasons = [
     {
         "name": "Spring",
-        "description": "Not too hot nor cold."
+        "description": "Not too hot nor cold.",
+        "class": "spring"
     },
     {
         "name": "Summer",
         "description": "Cats can get hot so make sure to craft some water if you can.",
-        "hot": true
+        "hot": true,
+        "class": "summer"
     },
     {
         "name": "Autumn",
-        "description": "Make sure to prepare for winter."
+        "description": "Make sure to prepare for winter.",
+        "class": "autumn"
     },
     {
         "name": "Winter",
         "description": "Prey is hard to find during winter.",
-        "cold": true
+        "cold": true,
+        "class": "winter"
     }
 ]
 let season = 0;
@@ -809,6 +826,7 @@ const tick = () => {
         }
         secondsUntilNextSeason = seasonLength;
     }
+    if (seasons[season].class) document.getElementById("seasonBox")!.className = seasons[season].class!;
     document.getElementById("seasonName")!.textContent = seasons[season].name;
     document.getElementById("seasonDescription")!.innerHTML = seasons[season].description + "<br/<br/>" + secondsUntilNextSeason + " seconds left until " + (season === seasons.length - 1 ? seasons[0].name : seasons[season + 1].name);
 
@@ -843,29 +861,29 @@ const tick = () => {
             createInventoryElem("stone")
         }
         const stoneSpan = document.getElementById("inventory.stone")!
-        stoneSpan.style.setProperty("--num", inventory.stone + "")
-        stoneSpan.setAttribute("aria-label", inventory.stone + "")
-    }
+        stoneSpan.style.setProperty("--num", inventory.stone + "");
+        stoneSpan.setAttribute("aria-label", inventory.stone + "");
+    };
     for (const item of items) {
         const itemElem = document.getElementById("inventory." + item.id + ".div");
         if (!itemElem) continue;
         itemElem!.querySelectorAll(".sellButton").forEach(sellButton => {
             const sellAmount = +(sellButton as HTMLButtonElement).dataset.sellAmount!;
             (sellButton as HTMLButtonElement).disabled = inventory[item.id] < sellAmount;
-        })
-    }
-    const woodPressOperators = cats.filter(cat => cat.role === "Wood Press Operator").length
+        });
+    };
+    const woodPressOperators = cats.filter(cat => cat.role === "Wood Press Operator").length;
     if (woodPressOperators) {
         const woodenPlanksGained = Math.min(woodPressOperators, inventory.wood_press ?? 0, Math.floor(inventory.wood / 500));
         inventory.wooden_plank ??= 0;
         inventory.wooden_plank += woodenPlanksGained;
         if (!document.getElementById("inventory.wooden_plank")) {
-            createInventoryElem("wooden_plank")
-        }
+            createInventoryElem("wooden_plank");
+        };
         const woodPlankSpan = document.getElementById("inventory.wooden_plank")!
-        woodPlankSpan.style.setProperty("--num", inventory.wooden_plank + "")
-        woodPlankSpan.setAttribute("aria-label", inventory.wooden_plank + "")
-        inventory.wood -= woodenPlanksGained * 500
-    }
-    localStorage.setItem("save", JSON.stringify({researched, cats, foodStock, researchPoints, starvationPoints, comfort, inventory, landSize}))
+        woodPlankSpan.style.setProperty("--num", inventory.wooden_plank + "");
+        woodPlankSpan.setAttribute("aria-label", inventory.wooden_plank + "");
+        inventory.wood -= woodenPlanksGained * 500;
+    };
+    localStorage.setItem("save", JSON.stringify({researched, cats, foodStock, researchPoints, starvationPoints, comfort, inventory, landSize}));
 }

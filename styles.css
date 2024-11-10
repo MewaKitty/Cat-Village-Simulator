@@ -58,9 +58,11 @@ button:disabled {
     display: flex;
     flex-direction: column;
     border: 2px solid black;
+    background: white;
     width: 20vw;
     border-radius: 0.1rem;
     padding: 1rem;
+    box-sizing: border-box;
 }
 
 .catGrid {
@@ -73,6 +75,7 @@ button:disabled {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    width: 20vw;
     height: calc(100vh - 1rem);
     overflow-y: scroll;
 }
@@ -80,6 +83,7 @@ button:disabled {
 #game {
     display: flex;
     gap: 1rem;
+    background: #ddd;
 }
 
 #game[hidden] {
@@ -115,6 +119,7 @@ button:disabled {
     justify-content: center;
     border: 2px solid black;
     border-radius: 0.1rem;
+    background: white;
     padding: 0 1rem;
     height: 8rem;
     box-sizing: border-box;
@@ -158,7 +163,8 @@ button:disabled {
 }
 
 #raid {
-    border: 2px solid red;
+    border: 2px solid #330000;
+    background: #eeaaaa;
     border-radius: 0.1rem;
     padding: 1rem;
 }
@@ -170,9 +176,11 @@ button:disabled {
 
 #recruitmentDiv {
     border: 2px solid darkblue;
+    background: #ddddff;
 }
 #craftingDiv {
     border: 2px solid darkgoldenrod;
+    background: #ffffdd;
 }
 
 @property --num {
@@ -210,6 +218,7 @@ button:disabled {
     align-items: center;
     border: 2px solid black;
     border-radius: 0.1rem;
+    background: white;
     padding: 1rem;
     box-sizing: border-box;
     gap: 1rem;
@@ -227,10 +236,66 @@ button:disabled {
     flex-direction: column;
     align-items: center;
     border: 2px solid black;
+    background: white;
     border-radius: 0.1rem;
     padding: 1rem;
     box-sizing: border-box;
 }
 #technologyList > div[hidden] {
     display: none;
+}
+
+#technologyList > div.wood {
+    border-color: #783a00;
+    background: #cca784;
+}
+
+#technologyList > div.stone {
+    border-color: #555;
+    background: #eee;
+}
+
+#seasonBox.spring {
+    border-color: #006633;
+    background: #aaffbb;
+}
+
+#seasonBox.summer {
+    border-color: #666600;
+    background: #ffffdd;
+}
+
+#seasonBox.autumn {
+    border-color: #663300;
+    background: #ffddaa;
+}
+
+#seasonBox.winter {
+    border-color: #000066;
+    background: #ddddff;
+}
+
+#landDetails {
+    border-color: #006600;
+    background: #ddffdd;
+}
+
+#toolsBox {
+    border-color: #666;
+    background: #ccc;
+}
+
+#technology {
+    border-color: #444;
+    background: #aaa;
+}
+
+#resourceGain {
+    border-color: #663300;
+    background: #ffdd99;
+}
+
+#inventory {
+    border-color: #336600;
+    background: #ddff99;
 }
