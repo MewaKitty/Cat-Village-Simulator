@@ -156,7 +156,7 @@ const technology: Technology[] = [
         "resource_cost": {
             "stone_bricks": 1000
         },
-        "requires": ["stone_bricks"],
+        "requires": ["wooden_den", "stone_bricks"],
         "class": "stone"
     },
     {
@@ -181,6 +181,18 @@ const technology: Technology[] = [
         },
         "requires": ["stone_bricks"],
         "class": "wood"
+    },
+    {
+        "name": "Postal Service",
+        "description": "Trade with random villages!",
+        "id": "postal_service",
+        "cost": 200000,
+        "resource_cost": {
+            "wooden_plank": 100,
+            "stone_bricks": 500
+        },
+        "requires": ["stone_bricks"],
+        "class": "stone"
     },
 ];
 const craftingRecipes = [
@@ -247,6 +259,28 @@ const craftingRecipes = [
             "wooden_plank": 100,
             "stone_bricks": 200
         }
+    },
+]
+const trades = [
+    {
+        "from": {
+            "amount": 50,
+            "id": "wood"
+        },
+        "to": {
+            "amount": 10,
+            "id": "stone"
+        },
+    },
+    {
+        "from": {
+            "amount": 10,
+            "id": "stone"
+        },
+        "to": {
+            "amount": 40,
+            "id": "wood"
+        },
     },
 ]
 const craftable: string[] = [];
@@ -397,6 +431,59 @@ const researchCallbacks: Record<string, () => void> = {
         createNewRole("Wood Press Operator")
         craftable.push("wood_press")
     },
+    "postal_service": () => {
+        const relationsButton = document.createElement("button");
+        relationsButton.textContent = "Relations";
+        document.getElementById("toolsRow")!.appendChild(relationsButton);
+        relationsButton.addEventListener("click", () => {
+            if (document.getElementById("relationsDiv")) return;
+            const relationsDiv = document.createElement("div");
+            relationsDiv.id = "relationsDiv";
+            relationsDiv.innerHTML = `<b>Relations</b>
+            <p>Hello there! Welcome to the relations area! What would you like to do today?</p>`;
+            document.getElementById("informationList")!.appendChild(relationsDiv);
+            const closeButton = document.createElement("div");
+            closeButton.classList.add("closeButton")
+            closeButton.setAttribute("aria-label", "Close")
+            closeButton.textContent = "X"
+            closeButton.addEventListener("click", () => {
+                relationsDiv.remove();
+            })
+            relationsDiv.appendChild(closeButton);
+            const tradeButton = document.createElement("button");
+            tradeButton.textContent = "Trade";
+            relationsDiv.appendChild(tradeButton)
+            tradeButton.addEventListener("click", () => {
+                relationsDiv.innerHTML = `<b>Trading</b>
+                <p>Trade with random NPC villages here.</p>`
+                relationsDiv.appendChild(closeButton)
+                for (const trade of trades) {
+                    const tradeDiv = document.createElement("div")
+                    tradeDiv.textContent = `${trade.from.amount}x ${items.find(item => item.id === trade.from.id)?.name} to ${trade.to.amount}x ${items.find(item => item.id === trade.to.id)?.name}`
+                    relationsDiv.appendChild(tradeDiv)
+                    const performTradeButton = document.createElement("button")
+                    performTradeButton.textContent = "Perform Trade"
+                    tradeDiv.appendChild(performTradeButton)
+                    performTradeButton.addEventListener("click", () => {
+                        if (!inventory[trade.from.id] || inventory[trade.from.id] < trade.from.amount) return performTradeButton.textContent = "Perform Trade - unaffordable!";
+                        inventory[trade.from.id] -= trade.from.amount;
+                        inventory[trade.to.id] ??= 0;
+                        inventory[trade.to.id] += trade.to.amount
+                        
+                        const fromItemSpan = document.getElementById("inventory." + trade.from.id)!;
+                        fromItemSpan.style.setProperty("--num", inventory[trade.from.id] + "");
+                        fromItemSpan.setAttribute("aria-label", inventory[trade.from.id] + "");
+
+                        if (!document.getElementById("inventory." + trade.to.id)) createInventoryElem(trade.to.id);
+                        
+                        const toItemSpan = document.getElementById("inventory." + trade.to.id)!;
+                        toItemSpan.style.setProperty("--num", inventory[trade.to.id] + "");
+                        toItemSpan.setAttribute("aria-label", inventory[trade.to.id] + "");
+                    })
+                }
+            })
+        })
+    }
 };
 const items = [
     {
@@ -673,6 +760,8 @@ let landSize = 1;
 let inventory: Record<string, number> = {};
 
 inventory.wood = 100000000;
+inventory.wooden_plank = 100000000;
+inventory.stone = 100000000;
 
 document.getElementById("expand")!.addEventListener("click", () => {
     if (researchPoints < 100 * 3 ** landSize) return;
@@ -797,7 +886,7 @@ const tick = () => {
     document.getElementById("researchPoints")!.setAttribute("aria-label", researchPoints + "")
     document.getElementById("comfort")!.style.setProperty("--num", comfort + "")
     document.getElementById("comfort")!.setAttribute("aria-label", comfort + "")
-    if (foodStock.reduce((l, c, i) => l + c, 0) > 500 && Math.random() < 0.01 / defense) {
+    if (foodStock.reduce((l, c, i) => l + c, 0) > 500 && Math.random() < 0.01 / defense && !raid) {
         document.getElementById("raid")!.hidden = false;
         document.getElementById("raidText")!.textContent = "You are being raided. You will use up 1.5x the amount of prey during the raid."
         document.getElementById("raidTimer")!.textContent = "30s left"

@@ -168,7 +168,7 @@ button:disabled {
     border-radius: 0.1rem;
     padding: 1rem;
 }
-#recruitmentDiv, #craftingDiv {
+#recruitmentDiv, #craftingDiv, #relationsDiv {
     border-radius: 0.1rem;
     padding: 1rem;
     position: relative;
@@ -182,7 +182,10 @@ button:disabled {
     border: 2px solid darkgoldenrod;
     background: #ffffdd;
 }
-
+#relationsDiv {
+    border: 2px solid darkcyan;
+    background: #ddffff;
+}
 @property --num {
     syntax: "<integer>";
     initial-value: 0;
@@ -223,12 +226,14 @@ button:disabled {
     box-sizing: border-box;
     gap: 1rem;
     width: 20vw;
+    height: calc(100vh - 2rem);
 }
 
 #technologyList {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    overflow-y: scroll;
 }
 
 #technologyList > div {
@@ -287,7 +292,7 @@ button:disabled {
 
 #technology {
     border-color: #444;
-    background: #aaa;
+    background: #ccc;
 }
 
 #resourceGain {
