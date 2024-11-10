@@ -108,7 +108,7 @@ button:disabled {
     display: flex;
     gap: 1rem;
 }
-#resourceGain, #inventory, #toolsBox {
+#resourceGain, #inventory, #toolsBox, #seasonBox {
     display: flex;
     flex-direction: column;
     align-items: center;

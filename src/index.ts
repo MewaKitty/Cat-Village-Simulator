@@ -83,6 +83,13 @@ const technology: Technology[] = [
         "requires": ["tree_chopper"]
     },
     {
+        "name": "Water Cup",
+        "description": "Create cups for cats to drink out of.",
+        "id": "water_cup",
+        "cost": 300,
+        "requires": ["basic_den"]
+    },
+    {
         "name": "Wooden Plank",
         "description": "A fundamental material.",
         "id": "wooden_plank",
@@ -172,6 +179,15 @@ const craftingRecipes = [
         "result": "basic_den",
         "resources": {
             "wood": 200
+        }
+    },
+    {
+        "name": "Water Cup",
+        "description": "Cats thirsty? Drink water!",
+        "id": "water_cup",
+        "result": "water_cup",
+        "resources": {
+            "wood": 1
         }
     },
     {
@@ -341,6 +357,9 @@ const researchCallbacks: Record<string, () => void> = {
             }
         })
     },
+    "water_cup": () => {
+        craftable.push("water_cup")
+    },
     "wooden_plank": () => {
         craftable.push("wooden_plank")
     },
@@ -371,6 +390,11 @@ const items = [
     {
         "id": "wood",
         "name": "Wood",
+        "sell": 1
+    },
+    {
+        "id": "water_cup",
+        "name": "Water Cup",
         "sell": 1
     },
     {
@@ -602,6 +626,29 @@ let researchPoints = 10000;
 let starvationPoints = 0;
 let comfort = 0;
 let lastCatStarve = Date.now();
+const seasons = [
+    {
+        "name": "Spring",
+        "description": "Not too hot nor cold."
+    },
+    {
+        "name": "Summer",
+        "description": "Cats can get hot so make sure to craft some water if you can.",
+        "hot": true
+    },
+    {
+        "name": "Autumn",
+        "description": "Make sure to prepare for winter."
+    },
+    {
+        "name": "Winter",
+        "description": "Prey is hard to find during winter.",
+        "cold": true
+    }
+]
+let season = 0;
+const seasonLength = 15 * 60;
+let secondsUntilNextSeason = seasonLength;
 
 let inventory: Record<string, number> = {};
 
@@ -661,7 +708,9 @@ const tick = () => {
         document.getElementById("gameOver")!.hidden = false;
         return;
     }
-    const foodHunted = Math.floor(cats.filter(cat => cat.role === "Hunter").reduce((l, c, i) => l + Math.floor(Math.random() * c.abilities.strength) + c.abilities.strength, 0) * ((comfort / 100) + 1));
+    let waterLeft = inventory.water_cup ?? 0;
+    const foodHunted = Math.floor((seasons[season].cold ? 0.1 : 1) * Math.floor(cats.filter(cat => cat.role === "Hunter" && (seasons[season].hot ? --waterLeft > 0 : true)).reduce((l, c, i) => l + Math.floor(Math.random() * c.abilities.strength) + c.abilities.strength, 0) * ((comfort / 100) + 1)));
+    console.log(waterLeft)
     const requiredFood = cats.length * 10 * (raid ? 1.5 : 1)
     if (foodHunted - requiredFood > 0) {
         if (starvationPoints > 0) {
@@ -742,6 +791,25 @@ const tick = () => {
         const technologyElem = document.getElementById(technologyItem.id + ".research") as HTMLButtonElement
         technologyElem.disabled = technologyItem.cost > researchPoints || (technologyItem.resource_cost ? !Object.entries(technologyItem.resource_cost).reduce((l, [id, amountRequired]) => l && inventory[id] >= amountRequired, true) : false);
     }
+    secondsUntilNextSeason -= 1;
+    if (secondsUntilNextSeason <= 0) {
+        if (season === seasons.length - 1) {
+            season = 0;
+        } else {
+            season += 1;
+        }
+        secondsUntilNextSeason = seasonLength;
+    }
+    document.getElementById("seasonName")!.textContent = seasons[season].name;
+    document.getElementById("seasonDescription")!.innerHTML = seasons[season].description + "<br/<br/>" + secondsUntilNextSeason + " seconds left until " + (season === seasons.length - 1 ? seasons[0].name : seasons[season + 1].name);
+
+    if (inventory.water_cup) {
+        inventory.water_cup = Math.max(0, waterLeft);
+        const waterCupSpan = document.getElementById("inventory.water_cup")!
+        waterCupSpan.style.setProperty("--num", inventory.water_cup + "")
+        waterCupSpan.setAttribute("aria-label", inventory.water_cup + "")
+    }
+
     const woodGained = cats.filter(cat => cat.role === "Tree Chopper").reduce((l, c, i) => l + Math.floor(Math.random() * 5 * Math.floor(c.abilities.strength / 5)), 0)
     if (woodGained) {
         inventory.wood ??= 0;
