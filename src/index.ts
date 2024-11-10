@@ -103,7 +103,7 @@ const technology: Technology[] = [
         "requires": ["wooden_plank"]
     },
     {
-        "name": "Wooden Recruitboard",
+        "name": "Wooden Recruit-board",
         "description": "If you want more cats, this is for you.",
         "id": "wooden_recruitboard",
         "cost": 15000,
@@ -111,6 +111,57 @@ const technology: Technology[] = [
             "wooden_plank": 500
         },
         "requires": ["recruitment_propaganda", "wooden_plank"]
+    },
+    {
+        "name": "Rock Mining",
+        "description": "Go mining to gather stone.",
+        "id": "rock_mining",
+        "cost": 20000,
+        "resource_cost": {
+            "wooden_plank": 100
+        },
+        "requires": ["wooden_plank"]
+    },
+    {
+        "name": "Stone Bricks",
+        "description": "Use this for building.",
+        "id": "stone_bricks",
+        "cost": 100000,
+        "resource_cost": {
+            "stone": 1000
+        },
+        "requires": ["rock_mining"]
+    },
+    {
+        "name": "Stone House",
+        "description": "More comfort than a wooden den!",
+        "id": "stone_house",
+        "cost": 1000000,
+        "resource_cost": {
+            "stone_bricks": 1000
+        },
+        "requires": ["stone_bricks"]
+    },
+    {
+        "name": "Stone Recruit-board",
+        "description": "If you want even more cats, this is for you.",
+        "id": "stone_recruitboard",
+        "cost": 2000000,
+        "resource_cost": {
+            "stone_bricks": 5000
+        },
+        "requires": ["wooden_recruitboard", "stone_bricks"]
+    },
+    {
+        "name": "Wood Press",
+        "description": "Tired of manually making wooden planks? This machine solves that!",
+        "id": "wood_press",
+        "cost": 2000000,
+        "resource_cost": {
+            "wooden_plank": 1000,
+            "stone_bricks": 5000
+        },
+        "requires": ["stone_bricks"]
     },
 ];
 const craftingRecipes = [
@@ -141,6 +192,34 @@ const craftingRecipes = [
             "wooden_plank": 20
         }
     },
+    {
+        "name": "Stone Bricks",
+        "description": "Use this for building.",
+        "id": "stone_bricks",
+        "result": "stone_bricks",
+        "resources": {
+            "stone": 20
+        }
+    },
+    {
+        "name": "Stone House",
+        "description": "Want enen more comfort? Make a stone house.",
+        "id": "stone_house",
+        "result": "stone_house",
+        "resources": {
+            "stone_bricks": 200
+        }
+    },
+    {
+        "name": "Wood Press",
+        "description": "Machine that automatically turns wood into wood press. Note: requires cat operator",
+        "id": "wood_press",
+        "result": "wood_press",
+        "resources": {
+            "wooden_plank": 100,
+            "stone_bricks": 200
+        }
+    },
 ]
 const craftable: string[] = [];
 let recruitmentCooldown = 60;
@@ -157,7 +236,7 @@ const researchCallbacks: Record<string, () => void> = {
             recruitmentDiv.id = "recruitmentDiv";
             recruitmentDiv.innerHTML = `<b>Recruitment</b>
             <p>You go and put up a poster for recruitment. One of the candidates stand out. Would you like to recruit them?</p>`;
-            document.getElementById("rightSide")!.appendChild(recruitmentDiv);
+            document.getElementById("informationList")!.appendChild(recruitmentDiv);
             const closeRecruit = () => {
                 recruitmentDiv.remove();
                 recruitToolButton.disabled = true;
@@ -216,7 +295,7 @@ const researchCallbacks: Record<string, () => void> = {
             craftingDiv.id = "craftingDiv";
             craftingDiv.innerHTML = `<b>Crafting</b>
             <p>Hello there! Welcome to the crafting area! What would you like to make today?</p>`;
-            document.getElementById("rightSide")!.appendChild(craftingDiv);
+            document.getElementById("informationList")!.appendChild(craftingDiv);
             const closeButton = document.createElement("div");
             closeButton.classList.add("closeButton")
             closeButton.setAttribute("aria-label", "Close")
@@ -271,6 +350,22 @@ const researchCallbacks: Record<string, () => void> = {
     "wooden_recruitboard": () => {
         recruitmentCooldown -= 20
     },
+    "rock_mining": () => {
+        createNewRole("Miner")
+    },
+    "stone_bricks": () => {
+        craftable.push("stone_bricks")
+    },
+    "stone_house": () => {
+        craftable.push("stone_house")
+    },
+    "stone_recruitboard": () => {
+        recruitmentCooldown -= 10
+    },
+    "wood_press": () => {
+        createNewRole("Wood Press Operator")
+        craftable.push("wood_press")
+    },
 };
 const items = [
     {
@@ -281,19 +376,40 @@ const items = [
     {
         "id": "basic_den",
         "name": "Basic Den",
-        "sell": 100,
+        "sell": 10,
         "usable": true
     },
     {
         "id": "wooden_plank",
         "name": "Wooden Plank",
-        "sell": 500
+        "sell": 50
     },
     {
         "id": "wooden_den",
         "name": "Wooden Den",
-        "sell": 2000,
+        "sell": 200,
         "usable": true
+    },
+    {
+        "id": "stone",
+        "name": "Stone",
+        "sell": 5
+    },
+    {
+        "id": "stone_bricks",
+        "name": "Stone Bricks",
+        "sell": 250
+    },
+    {
+        "id": "stone_house",
+        "name": "Stone House",
+        "sell": 400,
+        "usable": true
+    },
+    {
+        "id": "wood_press",
+        "name": "Wood Press",
+        "sell": 1000
     },
 ];
 const itemUse: Record<string, () => void> = {
@@ -301,6 +417,9 @@ const itemUse: Record<string, () => void> = {
         comfort += 1;
     },
     "wooden_den": () => {
+        comfort += 5;
+    },
+    "stone_house": () => {
         comfort += 10;
     },
 };
@@ -325,6 +444,7 @@ const createCatElement = (cat: Cat) => {
     }).join("")}`;
     document.getElementById("catList")?.appendChild(catElement);
     const roleSelect = document.createElement("select");
+    roleSelect.id = cat.id + ".roleSelect";
     for (const role of roles) {
         const roleOption = document.createElement("option");
         roleOption.textContent = role;
@@ -440,23 +560,23 @@ document.getElementById("continue")?.addEventListener("click", () => {
     researched = save.researched;
     cats = save.cats;
     foodStock = save.foodStock;
-    researchPoints = save.researchPoints
-    starvationPoints = save.starvationPoints
-    comfort = save.comfort
-    inventory = save.inventory
+    researchPoints = save.researchPoints;
+    starvationPoints = save.starvationPoints;
+    comfort = save.comfort;
+    inventory = save.inventory;
     for (const cat of cats) {
         createCatElement(cat);
-    }
+    };
     for (const technologyItem of technology) {
-        setupTechnologyItem(technologyItem)
+        setupTechnologyItem(technologyItem);
         if (technologyItem.requires) {
-            const canResearch = technologyItem.requires.reduce((l, c) => l && researched[c], true)
+            const canResearch = technologyItem.requires.reduce((l, c) => l && researched[c], true);
             if (canResearch) document.getElementById(technologyItem.id + ".div")!.hidden = false;
-        }
+        };
         if (technologyItem.id in researched) {
             document.getElementById(technologyItem.id + ".div")!.hidden = true;
-        }
-    }
+        };
+    };
     for (const itemId of Object.keys(inventory)) {
         createInventoryElem(itemId)
         const itemSpan = document.getElementById("inventory." + itemId)!
@@ -465,6 +585,10 @@ document.getElementById("continue")?.addEventListener("click", () => {
     }
     for (const researchId of Object.keys(researched)) {
         researchCallbacks[researchId]();
+    }
+    for (const cat of cats) {
+        const roleSelect = document.getElementById(cat.id + ".roleSelect") as HTMLSelectElement;
+        roleSelect.selectedIndex = roles.indexOf(cat.role)
     }
     document.getElementById("titleScreen")!.hidden = true;
     document.getElementById("game")!.hidden = false;
@@ -593,7 +717,7 @@ const tick = () => {
     document.getElementById("foodStock")!.setAttribute("aria-label", displayFoodStock)
     const defense = cats.filter(cat => cat.role === "Guard").reduce((l, c, i) => l + Math.floor((c.abilities.strength + c.abilities.agility) / 5), 0)
     document.getElementById("defense")!.textContent = defense + ""
-    researchPoints += cats.filter(cat => cat.role === "Researcher").reduce((l, c, i) => l + Math.floor(c.abilities.intelligence * Math.random() / 5), 0)
+    researchPoints += cats.filter(cat => cat.role === "Researcher").reduce((l, c, i) => l + Math.floor(c.abilities.intelligence * Math.random() * comfort / 5), 0)
     document.getElementById("researchPoints")!.style.setProperty("--num", researchPoints + "")
     document.getElementById("researchPoints")!.setAttribute("aria-label", researchPoints + "")
     document.getElementById("comfort")!.style.setProperty("--num", comfort + "")
@@ -629,6 +753,17 @@ const tick = () => {
         woodSpan.style.setProperty("--num", inventory.wood + "")
         woodSpan.setAttribute("aria-label", inventory.wood + "")
     }
+    const stoneGained = cats.filter(cat => cat.role === "Miner").reduce((l, c, i) => l + Math.floor(Math.random() * 5 * Math.floor(c.abilities.strength / 5)), 0)
+    if (stoneGained) {
+        inventory.stone ??= 0;
+        inventory.stone += stoneGained;
+        if (!document.getElementById("inventory.stone")) {
+            createInventoryElem("stone")
+        }
+        const stoneSpan = document.getElementById("inventory.stone")!
+        stoneSpan.style.setProperty("--num", inventory.stone + "")
+        stoneSpan.setAttribute("aria-label", inventory.stone + "")
+    }
     for (const item of items) {
         const itemElem = document.getElementById("inventory." + item.id + ".div");
         if (!itemElem) continue;
@@ -636,6 +771,19 @@ const tick = () => {
             const sellAmount = +(sellButton as HTMLButtonElement).dataset.sellAmount!;
             (sellButton as HTMLButtonElement).disabled = inventory[item.id] < sellAmount;
         })
+    }
+    const woodPressOperators = cats.filter(cat => cat.role === "Wood Press Operator").length
+    if (woodPressOperators) {
+        const woodenPlanksGained = Math.min(woodPressOperators, inventory.wood_press ?? 0, Math.floor(inventory.wood / 500));
+        inventory.wooden_plank ??= 0;
+        inventory.wooden_plank += woodenPlanksGained;
+        if (!document.getElementById("inventory.wooden_plank")) {
+            createInventoryElem("wooden_plank")
+        }
+        const woodPlankSpan = document.getElementById("inventory.wooden_plank")!
+        woodPlankSpan.style.setProperty("--num", inventory.wooden_plank + "")
+        woodPlankSpan.setAttribute("aria-label", inventory.wooden_plank + "")
+        inventory.wood -= woodenPlanksGained * 500
     }
     localStorage.setItem("save", JSON.stringify({researched, cats, foodStock, researchPoints, starvationPoints, comfort, inventory}))
 }

@@ -91,6 +91,17 @@ button:disabled {
     flex-direction: column;
     flex-grow: 1;
     gap: 1rem;
+    height: calc(100vh - 2rem);
+    overflow-y: scroll;
+}
+
+#informationList {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    gap: 1rem;
+    height: calc(100vh - 10rem);
+    overflow-y: scroll;
 }
 
 #topBar {
@@ -107,14 +118,30 @@ button:disabled {
     padding: 0 1rem;
     height: 8rem;
     box-sizing: border-box;
-    width: calc(100% / 3);
 }
 
-#game #rightSide #topBar #inventory {
+#statsAndInventory {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+#toolsBox {
+    width: 100%;
+}
+
+#game #statsAndInventory #resourceGain {
+    width: 15vw;
+}
+
+#game #statsAndInventory #inventory {
+    width: 15vw;
+    height: calc(100vh - 10rem);
     padding: 1rem;
     overflow-y: scroll;
+    align-items: start;
     justify-content: start;
-};
+}
 
 #inventory > div {
     display: flex;

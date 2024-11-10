@@ -13,25 +13,29 @@
         <div id="welcomeScreen"></div>
         <div id="game" hidden>
             <div id="catList"></div>
+            <div id="statsAndInventory">
+                <div id="resourceGain">
+                    <div>Hunted: <span id="foodHunted"></span></div>
+                    <div>Food Stock: <span id="foodStock"></span></div>
+                    <div>Defense: <span id="defense"></span></div>
+                    <div>Research: <span id="researchPoints"></span></div>
+                    <div>Comfort: <span id="comfort"></span></div>
+                </div>
+                <div id="inventory">
+                </div>
+            </div>
             <div id="rightSide">
                     <div id="topBar">
-                    <div id="resourceGain">
-                        <div>Hunted: <span id="foodHunted"></span></div>
-                        <div>Food Stock: <span id="foodStock"></span></div>
-                        <div>Defense: <span id="defense"></span></div>
-                        <div>Research: <span id="researchPoints"></span></div>
-                        <div>Comfort: <span id="comfort"></span></div>
-                    </div>
-                    <div id="inventory">
-                    </div>
                     <div id="toolsBox">
                         <b>Tools</b>
                         <p id="toolsNotUnlocked">You haven't unlocked any tools at the moment!</p>
                         <div id="toolsRow"></div>
                     </div>
                 </div>
-                <div id="raid" hidden>
-                    <span id="raidText"></span><br/><span id="raidTimer"></span>
+                <div id="informationList">
+                    <div id="raid" hidden>
+                        <span id="raidText"></span><br/><span id="raidTimer"></span>
+                    </div>
                 </div>
             </div>
             <div id="technology">
