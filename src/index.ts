@@ -439,9 +439,6 @@ const researchCallbacks: Record<string, () => void> = {
             if (document.getElementById("relationsDiv")) return;
             const relationsDiv = document.createElement("div");
             relationsDiv.id = "relationsDiv";
-            relationsDiv.innerHTML = `<b>Relations</b>
-            <p>Hello there! Welcome to the relations area! What would you like to do today?</p>`;
-            document.getElementById("informationList")!.appendChild(relationsDiv);
             const closeButton = document.createElement("div");
             closeButton.classList.add("closeButton")
             closeButton.setAttribute("aria-label", "Close")
@@ -449,39 +446,102 @@ const researchCallbacks: Record<string, () => void> = {
             closeButton.addEventListener("click", () => {
                 relationsDiv.remove();
             })
-            relationsDiv.appendChild(closeButton);
-            const tradeButton = document.createElement("button");
-            tradeButton.textContent = "Trade";
-            relationsDiv.appendChild(tradeButton)
-            tradeButton.addEventListener("click", () => {
-                relationsDiv.innerHTML = `<b>Trading</b>
-                <p>Trade with random NPC villages here.</p>`
-                relationsDiv.appendChild(closeButton)
-                for (const trade of trades) {
-                    const tradeDiv = document.createElement("div")
-                    tradeDiv.textContent = `${trade.from.amount}x ${items.find(item => item.id === trade.from.id)?.name} to ${trade.to.amount}x ${items.find(item => item.id === trade.to.id)?.name}`
-                    relationsDiv.appendChild(tradeDiv)
-                    const performTradeButton = document.createElement("button")
-                    performTradeButton.textContent = "Perform Trade"
-                    tradeDiv.appendChild(performTradeButton)
-                    performTradeButton.addEventListener("click", () => {
-                        if (!inventory[trade.from.id] || inventory[trade.from.id] < trade.from.amount) return performTradeButton.textContent = "Perform Trade - unaffordable!";
-                        inventory[trade.from.id] -= trade.from.amount;
-                        inventory[trade.to.id] ??= 0;
-                        inventory[trade.to.id] += trade.to.amount
-                        
-                        const fromItemSpan = document.getElementById("inventory." + trade.from.id)!;
-                        fromItemSpan.style.setProperty("--num", inventory[trade.from.id] + "");
-                        fromItemSpan.setAttribute("aria-label", inventory[trade.from.id] + "");
+            document.getElementById("informationList")!.appendChild(relationsDiv);
+            const mainRelationsPage = () => {
+                relationsDiv.innerHTML = `<b>Relations</b>
+            <span>Hello there! Welcome to the relations area! What would you like to do today?</span>`;
+                relationsDiv.appendChild(closeButton);
+                const storeButton = document.createElement("button");
+                storeButton.textContent = "Store";
+                relationsDiv.appendChild(storeButton);
+                storeButton.addEventListener("click", () => {
+                    storeRelationsPage();
+                });
+            };
+            const storeRelationsPage = () => {
+                relationsDiv.innerHTML = `<b>Store</b>
+                <span${catDollars} cat dollars</span>
+                <span>Would you like to sell or buy?</span>`;
+                relationsDiv.appendChild(closeButton);
+                const sellToolButton = document.createElement("button");
+                sellToolButton.textContent = "Sell";
+                sellToolButton.addEventListener("click", () => {
+                    relationsDiv.innerHTML = `<b>Selling</b>
+                    <span>What would you like to sell?</span>`;
+                    relationsDiv.appendChild(closeButton);
+                    const catDollarSpan = document.createElement("span");
+                    catDollarSpan.textContent = catDollars + " cat dollars";
+                    relationsDiv.appendChild(catDollarSpan);
+                    const backButton = document.createElement("button");
+                    backButton.textContent = "Back";
+                    relationsDiv.appendChild(backButton);
+                    backButton.addEventListener("click", storeRelationsPage);
+                    for (const [itemId, quantity] of Object.entries(inventory)) {
+                        const itemSpan = document.createElement("span");
+                        itemSpan.classList.add("itemSpan");
+                        const itemData = items.find(item => item.id === itemId);
+                        if (!itemData) continue;
+                        if (!itemData.sell) continue;
+                        const nameAndQuantitySpan = document.createElement("span");
+                        nameAndQuantitySpan.textContent = `${quantity}x ${itemData.name}`;
+                        itemSpan.appendChild(nameAndQuantitySpan);
+                        for (const sellAmount of sellAmounts) {
+                            const sellButton = document.createElement("button");
+                            sellButton.textContent = "Sell " + sellAmount + "x";
+                            sellButton.addEventListener("click", () => {
+                                if (sellAmount > quantity) return sellButton.textContent = "Sell " + sellAmount + "x - unaffordable!";
+                                inventory[itemId] -= sellAmount;
+                                catDollars += itemData.sell * sellAmount;
+                                
+                                updateInventoryItem(itemId);
+                                catDollarSpan.textContent = catDollars + " cat dollars";
+                                
+                                nameAndQuantitySpan.textContent = `${inventory[itemId]}x ${itemData.name}`;
+                            });
+                            itemSpan.appendChild(sellButton);
+                        };
+                        relationsDiv.appendChild(itemSpan);
+                    };
+                });
+                relationsDiv.appendChild(sellToolButton);
+                const buyToolButton = document.createElement("button");
+                buyToolButton.textContent = "Buy";
+                buyToolButton.addEventListener("click", () => {
+                    relationsDiv.innerHTML = `<b>Buying</b>
+                    <span>What would you like to buy?</span>`;
+                    relationsDiv.appendChild(closeButton)
+                    const catDollarSpan = document.createElement("span")
+                    catDollarSpan.textContent = catDollars + " cat dollars"
+                    relationsDiv.appendChild(catDollarSpan)
+                    const backButton = document.createElement("button")
+                    backButton.textContent = "Back";
+                    relationsDiv.appendChild(backButton);
+                    backButton.addEventListener("click", storeRelationsPage);
+                    for (const item of items) {
+                        const itemSpan = document.createElement("span");
+                        if (!item.buy) return;
+                        itemSpan.textContent = item.name + ": " + item.buy + " cat dollars each";
+                        itemSpan.classList.add("itemSpan");
+                        for (const amount of sellAmounts) {
+                            const buyButton = document.createElement("button");
+                            buyButton.textContent = "Buy " + amount + "x";
+                            buyButton.addEventListener("click", () => {
+                                if (item.buy * amount > catDollars) return buyButton.textContent = "Buy " + amount + "x - unaffordable!";
+                                inventory[item.id] += amount;
+                                catDollars -= item.buy * amount;
+                                
+                                updateInventoryItem(item.id);
 
-                        if (!document.getElementById("inventory." + trade.to.id)) createInventoryElem(trade.to.id);
-                        
-                        const toItemSpan = document.getElementById("inventory." + trade.to.id)!;
-                        toItemSpan.style.setProperty("--num", inventory[trade.to.id] + "");
-                        toItemSpan.setAttribute("aria-label", inventory[trade.to.id] + "");
-                    })
-                }
-            })
+                                catDollarSpan.textContent = catDollars + " cat dollars";
+                            });
+                            itemSpan.appendChild(buyButton);
+                        };
+                        relationsDiv.appendChild(itemSpan);
+                    };
+                });
+                relationsDiv.appendChild(buyToolButton);
+            };
+            mainRelationsPage();
         })
     }
 };
@@ -489,50 +549,52 @@ const items = [
     {
         "id": "wood",
         "name": "Wood",
-        "sell": 1
+        "research": 1,
+        "sell": 1,
+        "buy": 2
     },
     {
         "id": "water_cup",
         "name": "Water Cup",
-        "sell": 1
+        "research": 1
     },
     {
         "id": "basic_den",
         "name": "Basic Den",
-        "sell": 10,
+        "research": 10,
         "usable": true
     },
     {
         "id": "wooden_plank",
         "name": "Wooden Plank",
-        "sell": 50
+        "research": 50
     },
     {
         "id": "wooden_den",
         "name": "Wooden Den",
-        "sell": 200,
+        "research": 200,
         "usable": true
     },
     {
         "id": "stone",
         "name": "Stone",
-        "sell": 5
+        "research": 5
     },
     {
         "id": "stone_bricks",
         "name": "Stone Bricks",
-        "sell": 250
+        "research": 250
     },
     {
         "id": "stone_house",
         "name": "Stone House",
-        "sell": 400,
+        "research": 400,
         "usable": true
     },
     {
         "id": "wood_press",
         "name": "Wood Press",
-        "sell": 1000
+        "research": 1000
     },
 ];
 const itemUse: Record<string, () => void> = {
@@ -724,6 +786,7 @@ let raid = false;
 let foodStock: number[] = [];
 let maxFoodStock = 1000;
 let researchPoints = 10000;
+let catDollars = 0;
 let starvationPoints = 0;
 let comfort = 0;
 let lastCatStarve = Date.now();
@@ -775,7 +838,7 @@ const createInventoryElem = (id: string) => {
     const itemDiv = document.createElement("div");
     itemDiv.id = "inventory." + id + ".div";
     const itemTopInfo = document.createElement("div")
-    itemTopInfo.textContent = `${items.find(item => item.id === id)?.name} (${items.find(item => item.id === id)?.sell} research each): `
+    itemTopInfo.textContent = `${items.find(item => item.id === id)?.name} (${items.find(item => item.id === id)?.research} research each): `
     const itemSpan = document.createElement("span")
     itemSpan.classList.add("inventoryItemAmount")
     itemSpan.id = "inventory." + id
@@ -799,22 +862,28 @@ const createInventoryElem = (id: string) => {
         sellRow.appendChild(useButton)
     }
     for (const sellAmount of sellAmounts) {
-        const sellButton = document.createElement("button");
-        sellButton.textContent = "Sell " + sellAmount + "x";
-        sellButton.classList.add("sellButton")
-        sellButton.dataset.sellAmount = sellAmount + ""
-        sellButton.addEventListener("click", () => {
+        const analyzeButton = document.createElement("button");
+        analyzeButton.textContent = "Analyze " + sellAmount + "x";
+        analyzeButton.classList.add("analyzeButton")
+        analyzeButton.dataset.sellAmount = sellAmount + ""
+        analyzeButton.addEventListener("click", () => {
             if (inventory[id] >= sellAmount) {
                 inventory[id] -= sellAmount;
-                researchPoints += sellAmount * (items.find(item => item.id === id)?.sell ?? 0);
-                itemSpan.style.setProperty("--num", inventory[id] + "")
-                itemSpan.setAttribute("aria-label", inventory[id] + "");
+                researchPoints += sellAmount * (items.find(item => item.id === id)?.research ?? 0);
+                updateInventoryItem(id)
             }
         })
-        sellRow.appendChild(sellButton)
+        sellRow.appendChild(analyzeButton)
     }
     itemDiv.appendChild(sellRow);
     document.getElementById("inventory")?.appendChild(itemDiv)
+}
+
+const updateInventoryItem = (itemId: string) => {
+    const itemSpan = document.getElementById("inventory." + itemId)!;
+    itemSpan.style.setProperty("--num", inventory[itemId] + "");
+    itemSpan.setAttribute("aria-label", inventory[itemId] + "");
+    if (inventory[itemId] === 0) itemSpan.remove();
 }
 
 const tick = () => {
@@ -956,9 +1025,9 @@ const tick = () => {
     for (const item of items) {
         const itemElem = document.getElementById("inventory." + item.id + ".div");
         if (!itemElem) continue;
-        itemElem!.querySelectorAll(".sellButton").forEach(sellButton => {
-            const sellAmount = +(sellButton as HTMLButtonElement).dataset.sellAmount!;
-            (sellButton as HTMLButtonElement).disabled = inventory[item.id] < sellAmount;
+        itemElem!.querySelectorAll(".analyzeButton").forEach(analyzeButton => {
+            const sellAmount = +(analyzeButton as HTMLButtonElement).dataset.sellAmount!;
+            (analyzeButton as HTMLButtonElement).disabled = inventory[item.id] < sellAmount;
         });
     };
     const woodPressOperators = cats.filter(cat => cat.role === "Wood Press Operator").length;

@@ -32,6 +32,7 @@ button {
     border-radius: 0.25rem;
     padding: 0.2rem;
     cursor: pointer;
+    width: fit-content;
 }
 
 button:disabled {
@@ -185,6 +186,13 @@ button:disabled {
 #relationsDiv {
     border: 2px solid darkcyan;
     background: #ddffff;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+#relationsDiv .itemSpan {
+    display: flex;
+    gap: 1ch;
 }
 @property --num {
     syntax: "<integer>";
