@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <title>Cat Village Simulator</title>
         <link rel="stylesheet" href="./styles.css">
         <script type="module" src="./index.js" defer></script>
     </head>
@@ -12,45 +13,53 @@
         </div>
         <div id="welcomeScreen"></div>
         <div id="game" hidden>
-            <div id="catList"></div>
+            <ul id="catList"></ul>
             <div id="statsAndInventory">
-                <div id="resourceGain">
+                <article id="resourceGain">
                     <div>Hunted: <span id="foodHunted"></span></div>
-                    <div>Food Stock: <span id="foodStock"></span></div>
+                    <div>Food Stock: <span id="foodStock"></span>/<span id="maxFoodStock"></span></div>
                     <div>Defense: <span id="defense"></span></div>
-                    <div>Research: <span id="researchPoints"></span></div>
+                    <div>Research: <span id="researchPoints"></span>/<span id="maxResearchPoints"></span></div>
                     <div>Comfort: <span id="comfort"></span></div>
-                </div>
-                <div id="inventory">
-                </div>
+                </article>
+                <article id="inventory">
+                    <ul id="inventoryList"></ul>
+                </article>
             </div>
             <div id="rightSide">
                 <div id="topBar">
-                    <div id="toolsBox">
+                    <article id="toolsBox">
                         <b>Tools</b>
                         <p id="toolsNotUnlocked">You haven't unlocked any tools at the moment!</p>
                         <div id="toolsRow"></div>
-                    </div>
-                    <div id="landDetails">
+                    </article>
+                    <article id="landDetails">
                         <div>Size: <span id="landSize"></span></div>
                         <div>Max Prey: <span id="maxPrey"></span></div>
                         <button id="expand">Expand</button>
-                    </div>
-                    <div id="seasonBox">
+                    </article>
+                    <article id="seasonBox">
                         <b id="seasonName">Season</b>
                         <p id="seasonDescription">Season description.</p>
-                    </div>
+                    </article>
                 </div>
                 <div id="informationList">
-                    <div id="raid" hidden>
+                    <article id="raid" hidden>
                         <span id="raidText"></span><br/><span id="raidTimer"></span>
-                    </div>
+                    </article>
                 </div>
             </div>
-            <div id="technology">
-                <b>Technology</b>
-                <div id="technologyList"></div>
-            </div>
+            <article id="technology">
+                <div class="tabs" role="tablist">
+                    <button role="tab" aria-controls="technologyList" tabindex="0" id="technologyButton" aria-selected="true">Technology</button>
+                    <button role="tab" aria-controls="buildingsDiv" tabindex="-1" id="buildingsButton">Buildings</button>
+                </div>
+                <ul id="technologyList" role="tabpanel"></ul>
+                <div id="buildingsDiv" role="tabpanel" hidden>
+                    <b id="availableLandAssignmentsSpan">Available land assignments: </b>
+                    <div id="landAssignmentsList"></div>
+                </div>
+            </article>
         </div>
         <div id="gameOver" hidden>
             <b>Game Over</b>

@@ -36,7 +36,8 @@ button {
 }
 
 button:disabled {
-    opacity: 0.5;
+    background-color: #0000009f;
+    border-color: #3333337f;
     cursor: not-allowed;
 }
 
@@ -79,6 +80,7 @@ button:disabled {
     width: 20vw;
     height: calc(100vh - 1rem);
     overflow-y: scroll;
+    padding-left: 0;
 }
 
 #game {
@@ -146,7 +148,11 @@ button:disabled {
     justify-content: start;
 }
 
-#inventory > div {
+#inventory > ul {
+    padding-left: 0;
+}
+
+#inventory > ul > li {
     display: flex;
     flex-direction: column;
 }
@@ -242,9 +248,14 @@ button:disabled {
     flex-direction: column;
     gap: 1rem;
     overflow-y: scroll;
+    padding-left: 0;
 }
 
-#technologyList > div {
+#technologyList[hidden] {
+    display: none;
+}
+
+#technologyList > li {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -254,18 +265,23 @@ button:disabled {
     padding: 1rem;
     box-sizing: border-box;
 }
-#technologyList > div[hidden] {
+#technologyList > li[hidden] {
     display: none;
 }
 
-#technologyList > div.wood {
+#technologyList > li.wood {
     border-color: #783a00;
-    background: #cca784;
+    background: #eeceb0;
 }
 
-#technologyList > div.stone {
+#technologyList > li.stone {
     border-color: #555;
     background: #eee;
+}
+
+#landAssignmentsList > div {
+    display: flex;
+    gap: 1ch;
 }
 
 #seasonBox.spring {
@@ -311,4 +327,30 @@ button:disabled {
 #inventory {
     border-color: #336600;
     background: #ddff99;
+}
+
+.tabs {
+    border-bottom: 1px solid gray;
+    padding: 0 0.25rem;
+}
+
+.tabs button {
+    -webkit-appearance: none;
+    appearance: none;
+    background: none;
+    border: none;
+    color: black;
+    width: 6rem;
+    padding: 0.25rem;
+    box-sizing: border-box;
+}
+
+.tabs [aria-selected="true"] {
+    border-top: 1px solid gray;
+    border-left: 1px solid gray;
+    border-right: 1px solid gray;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    background: white;
+    font-weight: bold;
 }

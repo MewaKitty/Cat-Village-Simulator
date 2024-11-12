@@ -97,7 +97,7 @@ const technology: Technology[] = [
         "name": "Wooden Plank",
         "description": "A fundamental material.",
         "id": "wooden_plank",
-        "cost": 1000,
+        "cost": 500,
         "resource_cost": {
             "wood": 1000
         },
@@ -108,7 +108,7 @@ const technology: Technology[] = [
         "name": "Wooden Den",
         "description": "If the basic den too basic for you, make a wooden den.",
         "id": "wooden_den",
-        "cost": 1500,
+        "cost": 750,
         "resource_cost": {
             "wooden_plank": 100
         },
@@ -119,7 +119,7 @@ const technology: Technology[] = [
         "name": "Wooden Recruit-board",
         "description": "If you want more cats, this is for you.",
         "id": "wooden_recruitboard",
-        "cost": 15000,
+        "cost": 1000,
         "resource_cost": {
             "wooden_plank": 500
         },
@@ -130,7 +130,7 @@ const technology: Technology[] = [
         "name": "Rock Mining",
         "description": "Go mining to gather stone.",
         "id": "rock_mining",
-        "cost": 20000,
+        "cost": 1500,
         "resource_cost": {
             "wooden_plank": 100
         },
@@ -141,7 +141,7 @@ const technology: Technology[] = [
         "name": "Stone Bricks",
         "description": "Use this for building.",
         "id": "stone_bricks",
-        "cost": 100000,
+        "cost": 2000,
         "resource_cost": {
             "stone": 1000
         },
@@ -152,7 +152,7 @@ const technology: Technology[] = [
         "name": "Stone House",
         "description": "More comfort than a wooden den!",
         "id": "stone_house",
-        "cost": 1000000,
+        "cost": 3000,
         "resource_cost": {
             "stone_bricks": 1000
         },
@@ -163,7 +163,7 @@ const technology: Technology[] = [
         "name": "Stone Recruit-board",
         "description": "If you want even more cats, this is for you.",
         "id": "stone_recruitboard",
-        "cost": 2000000,
+        "cost": 3000,
         "resource_cost": {
             "stone_bricks": 5000
         },
@@ -174,7 +174,7 @@ const technology: Technology[] = [
         "name": "Wood Press",
         "description": "Tired of manually making wooden planks? This machine solves that!",
         "id": "wood_press",
-        "cost": 2000000,
+        "cost": 5000,
         "resource_cost": {
             "wooden_plank": 1000,
             "stone_bricks": 5000
@@ -186,7 +186,7 @@ const technology: Technology[] = [
         "name": "Postal Service",
         "description": "Trade with random villages!",
         "id": "postal_service",
-        "cost": 200000,
+        "cost": 3000,
         "resource_cost": {
             "wooden_plank": 100,
             "stone_bricks": 500
@@ -561,18 +561,18 @@ const items = [
     {
         "id": "basic_den",
         "name": "Basic Den",
-        "research": 10,
+        "research": 2,
         "usable": true
     },
     {
         "id": "wooden_plank",
         "name": "Wooden Plank",
-        "research": 50
+        "research": 3
     },
     {
         "id": "wooden_den",
         "name": "Wooden Den",
-        "research": 200,
+        "research": 5,
         "usable": true
     },
     {
@@ -583,18 +583,18 @@ const items = [
     {
         "id": "stone_bricks",
         "name": "Stone Bricks",
-        "research": 250
+        "research": 10
     },
     {
         "id": "stone_house",
         "name": "Stone House",
-        "research": 400,
+        "research": 20,
         "usable": true
     },
     {
         "id": "wood_press",
         "name": "Wood Press",
-        "research": 1000
+        "research": 10
     },
 ];
 const itemUse: Record<string, () => void> = {
@@ -620,7 +620,7 @@ const createNewRole = (roleName: string) => {
 let researched: Record<string, boolean> = {};
 let cats: Cat[] = [];
 const createCatElement = (cat: Cat) => {
-    const catElement = document.createElement("div");
+    const catElement = document.createElement("li");
     catElement.id = cat.id + ".catBox";
     catElement.classList.add("catBox");
     catElement.innerHTML = `<b>${cat.name}</b>
@@ -628,6 +628,10 @@ const createCatElement = (cat: Cat) => {
         return `<label id="${cat.id}.${abilityId}.label" for="${cat.id}.${abilityId}">${abilities.find(ability => ability.id === abilityId)?.name + ": " + abilityNumber}</label><meter id="${cat.id}.${abilityId}" min="1" max="20" value="${abilityNumber}" aria-labelledby="${cat.id}.${abilityId}.label"></meter>`
     }).join("")}`;
     document.getElementById("catList")?.appendChild(catElement);
+    const roleLabel = document.createElement("label");
+    roleLabel.textContent = "Role";
+    roleLabel.setAttribute("for", cat.id + ".roleSelect")
+    catElement.appendChild(roleLabel)
     const roleSelect = document.createElement("select");
     roleSelect.id = cat.id + ".roleSelect";
     for (const role of roles) {
@@ -643,8 +647,8 @@ const createCatElement = (cat: Cat) => {
 
 const setupTechnologyItem = (technologyItem: Technology) => {
 
-    const technologyElem = document.createElement("div");
-    technologyElem.id = technologyItem.id + ".div";
+    const technologyElem = document.createElement("li");
+    technologyElem.id = technologyItem.id + ".item";
     technologyElem.innerHTML = `<b>${technologyItem.name}</b>
     <p>${technologyItem.description}</p>
     <span>Cost: ${technologyItem.cost} research points${technologyItem.resource_cost ? "<br/>" + Object.entries(technologyItem.resource_cost).map(([id, quantity]) => 
@@ -674,7 +678,7 @@ const setupTechnologyItem = (technologyItem: Technology) => {
         for (const technologyNextItem of technology) {
             if (!technologyNextItem.requires || !technologyNextItem.requires.includes(technologyItem.id)) continue;
             const canResearch = technologyNextItem.requires.reduce((l, c) => l && researched[c], true)
-            if (canResearch) document.getElementById(technologyNextItem.id + ".div")!.hidden = false;
+            if (canResearch) document.getElementById(technologyNextItem.id + ".item")!.hidden = false;
         };
     })
     technologyElem.appendChild(researchButton);
@@ -751,6 +755,7 @@ document.getElementById("continue")?.addEventListener("click", () => {
     comfort = save.comfort;
     inventory = save.inventory;
     landSize = save.landSize;
+    landAssignments = 5 ** landSize;
     for (const cat of cats) {
         createCatElement(cat);
     };
@@ -758,10 +763,10 @@ document.getElementById("continue")?.addEventListener("click", () => {
         setupTechnologyItem(technologyItem);
         if (technologyItem.requires) {
             const canResearch = technologyItem.requires.reduce((l, c) => l && researched[c], true);
-            if (canResearch) document.getElementById(technologyItem.id + ".div")!.hidden = false;
+            if (canResearch) document.getElementById(technologyItem.id + ".item")!.hidden = false;
         };
         if (technologyItem.id in researched) {
-            document.getElementById(technologyItem.id + ".div")!.hidden = true;
+            document.getElementById(technologyItem.id + ".item")!.hidden = true;
         };
     };
     for (const itemId of Object.keys(inventory)) {
@@ -784,7 +789,6 @@ document.getElementById("continue")?.addEventListener("click", () => {
 
 let raid = false;
 let foodStock: number[] = [];
-let maxFoodStock = 1000;
 let researchPoints = 10000;
 let catDollars = 0;
 let starvationPoints = 0;
@@ -819,6 +823,8 @@ const seasonLength = 15 * 60;
 let secondsUntilNextSeason = seasonLength;
 
 let landSize = 1;
+let landAssignments = 5;
+const getTotalAssignedLand = () => Object.values(landAssignedTypes).reduce((l, c) => l + c, 0)
 
 let inventory: Record<string, number> = {};
 
@@ -830,13 +836,115 @@ document.getElementById("expand")!.addEventListener("click", () => {
     if (researchPoints < 100 * 3 ** landSize) return;
     researchPoints -= 100 * 3 ** landSize;
     landSize += 1;
+    landAssignments = 5 ** landSize;
 })
+/*
+document.getElementById("buildingsButton")!.addEventListener("click", () => {
+    document.getElementById("technologyList")!.hidden = true;
+    document.getElementById("buildingsDiv")!.hidden = false;
+    document.getElementById("technologyButton")!.classList.remove("selected")
+    document.getElementById("buildingsButton")!.classList.add("selected")
+})
+document.getElementById("technologyButton")!.addEventListener("click", () => {
+    document.getElementById("technologyList")!.hidden = false;
+    document.getElementById("buildingsDiv")!.hidden = true;
+    document.getElementById("technologyButton")!.classList.add("selected")
+    document.getElementById("buildingsButton")!.classList.remove("selected")
+})*/
 
+const changeTabs = (e: Event) => {
+    const targetTab = e.target as HTMLButtonElement;
+    const tabList = targetTab.parentNode!;
+    const tabGroup = tabList.parentNode!;
+    tabList
+      .querySelectorAll(':scope > [aria-selected="true"]')
+      .forEach(tab => tab.setAttribute("aria-selected", "false"));
+    targetTab.setAttribute("aria-selected", "true");
+    
+    tabGroup
+      .querySelectorAll(':scope > [role="tabpanel"]')
+      .forEach(tab => tab.setAttribute("hidden", "true"));
+  
+    tabGroup
+      .querySelector(`#${targetTab.getAttribute("aria-controls")}`)
+      ?.removeAttribute("hidden");
+}
+
+for (const tabList of Array.from(document.querySelectorAll(`[role="tablist"]`))) {
+    const tabs = tabList.querySelectorAll(':scope > [role="tab"]');
+  
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", changeTabs);
+    });
+  
+    let tabFocus = 0;
+  
+    tabList.addEventListener("keydown", (e) => {
+        if (!(e instanceof KeyboardEvent)) return;
+        if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+            tabs[tabFocus].setAttribute("tabindex", "-1");
+            if (e.key === "ArrowRight") {
+                tabFocus++;
+                if (tabFocus >= tabs.length) {
+                    tabFocus = 0;
+                }
+            } else if (e.key === "ArrowLeft") {
+                tabFocus--;
+                if (tabFocus < 0) {
+                    tabFocus = tabs.length - 1;
+                }
+            }
+  
+            tabs[tabFocus].setAttribute("tabindex", "0");
+            (tabs[tabFocus] as HTMLButtonElement).focus();
+        }
+    });
+}
+const landAssignmentTypes = [
+    {
+        "name": "Food Stockpiles",
+        "id": "food_stockpiles"
+    },
+    {
+        "name": "Research Library",
+        "id": "research_library"
+    },
+]
+const landAssignedTypes: Record<string, number> = {}
+for (const assignmentType of landAssignmentTypes) {
+    const assignmentTypeDiv = document.createElement("div")
+    const nameAndCount = document.createElement("span")
+    nameAndCount.textContent = assignmentType.name + ": 0"
+    assignmentTypeDiv.appendChild(nameAndCount);
+    const minusButton = document.createElement("button");
+    minusButton.textContent = "-";
+    minusButton.disabled = true;
+    minusButton.addEventListener("click", () => {
+        if (!landAssignedTypes[assignmentType.id]) return;
+        landAssignedTypes[assignmentType.id] -= 1;
+        nameAndCount.textContent = assignmentType.name + ": " + landAssignedTypes[assignmentType.id];
+        if (landAssignedTypes[assignmentType.id] === 0) minusButton.disabled = true;
+        document.getElementById("availableLandAssignmentsSpan")!.textContent = "Available land assignments: " + (landAssignments - getTotalAssignedLand());
+    });
+    assignmentTypeDiv.appendChild(minusButton);
+    const plusButton = document.createElement("button");
+    plusButton.textContent = "+";
+    plusButton.addEventListener("click", () => {
+        if (landAssignments - getTotalAssignedLand() <= 0) return;
+        landAssignedTypes[assignmentType.id] ??= 0;
+        landAssignedTypes[assignmentType.id] += 1;
+        nameAndCount.textContent = assignmentType.name + ": " + landAssignedTypes[assignmentType.id];
+        minusButton.disabled = false;
+        document.getElementById("availableLandAssignmentsSpan")!.textContent = "Available land assignments: " + (landAssignments - getTotalAssignedLand());    
+    })
+    assignmentTypeDiv.appendChild(plusButton);
+    document.getElementById("landAssignmentsList")!.appendChild(assignmentTypeDiv)
+}
 const sellAmounts = [1, 10, 100];
 
 const createInventoryElem = (id: string) => {
-    const itemDiv = document.createElement("div");
-    itemDiv.id = "inventory." + id + ".div";
+    const itemDiv = document.createElement("li");
+    itemDiv.id = "inventory." + id + ".item";
     const itemTopInfo = document.createElement("div")
     itemTopInfo.textContent = `${items.find(item => item.id === id)?.name} (${items.find(item => item.id === id)?.research} research each): `
     const itemSpan = document.createElement("span")
@@ -876,7 +984,7 @@ const createInventoryElem = (id: string) => {
         sellRow.appendChild(analyzeButton)
     }
     itemDiv.appendChild(sellRow);
-    document.getElementById("inventory")?.appendChild(itemDiv)
+    document.getElementById("inventoryList")?.appendChild(itemDiv)
 }
 
 const updateInventoryItem = (itemId: string) => {
@@ -925,6 +1033,8 @@ const tick = () => {
     if (foodStock.length > 30) {
         foodStock.splice(0, 1)
     }
+    const maxFoodStock = (landAssignedTypes.food_stockpiles ?? 0) * 200 + 200
+    document.getElementById("maxFoodStock")!.textContent = maxFoodStock + "";
     if (foodStock.reduce((l, c, i) => l + c, 0) > maxFoodStock) {
         const totalSurplus = foodStock.reduce((l, c, i) => l + c, 0)
         let takenAway = 0
@@ -951,6 +1061,9 @@ const tick = () => {
     const defense = cats.filter(cat => cat.role === "Guard").reduce((l, c, i) => l + Math.floor((c.abilities.strength + c.abilities.agility) / 5), 0)
     document.getElementById("defense")!.textContent = defense + ""
     researchPoints += cats.filter(cat => cat.role === "Researcher").reduce((l, c, i) => l + Math.floor(c.abilities.intelligence * Math.random() * comfort / 5), 0)
+    const maxResearchPoints = (landAssignedTypes.research_library ?? 0) * 200 + 200
+    if (researchPoints > maxResearchPoints) researchPoints = maxResearchPoints;
+    document.getElementById("maxResearchPoints")!.textContent = maxResearchPoints + ""
     document.getElementById("researchPoints")!.style.setProperty("--num", researchPoints + "")
     document.getElementById("researchPoints")!.setAttribute("aria-label", researchPoints + "")
     document.getElementById("comfort")!.style.setProperty("--num", comfort + "")
@@ -958,9 +1071,9 @@ const tick = () => {
     if (foodStock.reduce((l, c, i) => l + c, 0) > 500 && Math.random() < 0.01 / defense && !raid) {
         document.getElementById("raid")!.hidden = false;
         document.getElementById("raidText")!.textContent = "You are being raided. You will use up 1.5x the amount of prey during the raid."
-        document.getElementById("raidTimer")!.textContent = "30s left"
+        let timeLeft = 30 - Math.floor(Math.random() * defense)
+        document.getElementById("raidTimer")!.textContent = timeLeft + "s left"
         raid = true
-        let timeLeft = 30
         const raidInterval = setInterval(() => {
             timeLeft -= 1;
             if (timeLeft <= 0) {
@@ -992,6 +1105,8 @@ const tick = () => {
     document.getElementById("maxPrey")!.textContent = 50 * 2 ** landSize + ""
     document.getElementById("expand")!.textContent = "Expand: " + 100 * 3 ** landSize + " research points";
     (document.getElementById("expand") as HTMLButtonElement).disabled = researchPoints < 100 * 3 ** landSize
+
+    document.getElementById("availableLandAssignmentsSpan")!.textContent = "Available land assignments: " + (landAssignments - getTotalAssignedLand());
 
     if (inventory.water_cup) {
         inventory.water_cup = Math.max(0, waterLeft);
@@ -1043,5 +1158,5 @@ const tick = () => {
         woodPlankSpan.setAttribute("aria-label", inventory.wooden_plank + "");
         inventory.wood -= woodenPlanksGained * 500;
     };
-    localStorage.setItem("save", JSON.stringify({researched, cats, foodStock, researchPoints, starvationPoints, comfort, inventory, landSize}));
+    localStorage.setItem("save", JSON.stringify({researched, cats, foodStock, researchPoints, starvationPoints, comfort, inventory, landSize, landAssignedTypes}));
 }
