@@ -390,7 +390,7 @@ const researchCallbacks: Record<string, () => void> = {
                             if (inventory[itemId] === 0) itemSpan.remove();
                         }
                         inventory[recipe.result] ??= 0;
-                        inventory[recipe.result] += craftAmount;
+                        addInventoryItem(recipe.result, craftAmount)
                         
                         if (!document.getElementById("inventory." + recipe.result)) {
                             createInventoryElem(recipe.result)
@@ -491,7 +491,7 @@ const researchCallbacks: Record<string, () => void> = {
                             sellButton.addEventListener("click", () => {
                                 if (sellAmount > quantity) return sellButton.textContent = "Sell " + sellAmount + "x - unaffordable!";
                                 inventory[itemId] -= sellAmount;
-                                catDollars += itemData.sell * sellAmount;
+                                catDollars += itemData.sell! * sellAmount;
                                 
                                 updateInventoryItem(itemId);
                                 catDollarSpan.textContent = catDollars + " cat dollars";
@@ -526,9 +526,9 @@ const researchCallbacks: Record<string, () => void> = {
                             const buyButton = document.createElement("button");
                             buyButton.textContent = "Buy " + amount + "x";
                             buyButton.addEventListener("click", () => {
-                                if (item.buy * amount > catDollars) return buyButton.textContent = "Buy " + amount + "x - unaffordable!";
-                                inventory[item.id] += amount;
-                                catDollars -= item.buy * amount;
+                                if (item.buy! * amount > catDollars) return buyButton.textContent = "Buy " + amount + "x - unaffordable!";
+                                addInventoryItem(item.id, amount)
+                                catDollars -= item.buy! * amount;
                                 
                                 updateInventoryItem(item.id);
 
@@ -545,7 +545,16 @@ const researchCallbacks: Record<string, () => void> = {
         })
     }
 };
-const items = [
+const items: {
+    id: string,
+    name: string,
+    research: number,
+    sell?: number,
+    buy?: number,
+    usable?: true,
+    building?: true,
+    landAssignment?: AssignmentType
+}[] = [
     {
         "id": "wood",
         "name": "Wood",
@@ -562,7 +571,7 @@ const items = [
         "id": "basic_den",
         "name": "Basic Den",
         "research": 2,
-        "usable": true
+        "building": true
     },
     {
         "id": "wooden_plank",
@@ -573,7 +582,7 @@ const items = [
         "id": "wooden_den",
         "name": "Wooden Den",
         "research": 5,
-        "usable": true
+        "building": true
     },
     {
         "id": "stone",
@@ -589,7 +598,7 @@ const items = [
         "id": "stone_house",
         "name": "Stone House",
         "research": 20,
-        "usable": true
+        "building": true
     },
     {
         "id": "wood_press",
@@ -598,16 +607,29 @@ const items = [
     },
 ];
 const itemUse: Record<string, () => void> = {
-    "basic_den": () => {
-        comfort += 1;
-    },
-    "wooden_den": () => {
-        comfort += 5;
-    },
-    "stone_house": () => {
-        comfort += 10;
-    },
 };
+const landAssign: Record<string, (amount: number) => void> = {
+    "basic_den": (amount) => {
+        comfort += 1 * amount;
+    },
+    "wooden_den": (amount) => {
+        comfort += 5 * amount;
+    },
+    "stone_house": (amount) => {
+        comfort += 10 * amount;
+    },
+}
+const landUnassign: Record<string, (amount: number) => void> = {
+    "basic_den": (amount) => {
+        comfort -= 1 * amount;
+    },
+    "wooden_den": (amount) => {
+        comfort -= 5 * amount;
+    },
+    "stone_house": (amount) => {
+        comfort -= 10 * amount;
+    },
+}
 const createNewRole = (roleName: string) => {
     roles.push(roleName)
     for (const cat of cats) {
@@ -900,7 +922,11 @@ for (const tabList of Array.from(document.querySelectorAll(`[role="tablist"]`)))
         }
     });
 }
-const landAssignmentTypes = [
+interface AssignmentType {
+    name: string,
+    id: string
+}
+const landAssignmentTypes: AssignmentType[] = [
     {
         "name": "Food Stockpiles",
         "id": "food_stockpiles"
@@ -909,89 +935,119 @@ const landAssignmentTypes = [
         "name": "Research Library",
         "id": "research_library"
     },
+    {
+        "name": "Grass Den",
+        "id": "grass_den"
+    },
 ]
 const landAssignedTypes: Record<string, number> = {}
-for (const assignmentType of landAssignmentTypes) {
-    const assignmentTypeDiv = document.createElement("div")
+const createAssignmentType = (assignmentType: AssignmentType, fromItem: boolean) => {
+    const assignmentTypeDiv = document.createElement("div");
     const nameAndCount = document.createElement("span")
-    nameAndCount.textContent = assignmentType.name + ": 0"
+    nameAndCount.textContent = assignmentType.name + ": "
+    const countSpan = document.createElement("span");
+    countSpan.textContent = fromItem ? "" : "0"
+    if (fromItem) countSpan.classList.add("assignmentItemCount");
+    if (fromItem) countSpan.id = "inventory." + assignmentType.id;
+    nameAndCount.appendChild(countSpan)
     assignmentTypeDiv.appendChild(nameAndCount);
     const minusButton = document.createElement("button");
-    minusButton.textContent = "-";
-    minusButton.disabled = true;
+    minusButton.textContent = fromItem ? "Demolish" : "-";
+    minusButton.classList.add("assignmentItemDemolish");
+    minusButton.dataset.id = assignmentType.id;
     minusButton.addEventListener("click", () => {
-        if (!landAssignedTypes[assignmentType.id]) return;
-        landAssignedTypes[assignmentType.id] -= 1;
-        nameAndCount.textContent = assignmentType.name + ": " + landAssignedTypes[assignmentType.id];
-        if (landAssignedTypes[assignmentType.id] === 0) minusButton.disabled = true;
-        document.getElementById("availableLandAssignmentsSpan")!.textContent = "Available land assignments: " + (landAssignments - getTotalAssignedLand());
+        if (fromItem) {
+            if (inventory[assignmentType.id] <= 0) return;
+            inventory[assignmentType.id] -= 1;
+            updateInventoryItem(assignmentType.id);
+            landUnassign[assignmentType.id]?.(1);
+        } else {
+            if (!landAssignedTypes[assignmentType.id]) return;
+            landAssignedTypes[assignmentType.id] -= 1;
+            countSpan.textContent = landAssignedTypes[assignmentType.id] + "";
+            if (landAssignedTypes[assignmentType.id] === 0) minusButton.disabled = true;
+            document.getElementById("availableLandAssignmentsSpan")!.textContent = "Available land assignments: " + (landAssignments - getTotalAssignedLand());
+        };
     });
     assignmentTypeDiv.appendChild(minusButton);
-    const plusButton = document.createElement("button");
-    plusButton.textContent = "+";
-    plusButton.addEventListener("click", () => {
-        if (landAssignments - getTotalAssignedLand() <= 0) return;
-        landAssignedTypes[assignmentType.id] ??= 0;
-        landAssignedTypes[assignmentType.id] += 1;
-        nameAndCount.textContent = assignmentType.name + ": " + landAssignedTypes[assignmentType.id];
-        minusButton.disabled = false;
-        document.getElementById("availableLandAssignmentsSpan")!.textContent = "Available land assignments: " + (landAssignments - getTotalAssignedLand());    
-    })
-    assignmentTypeDiv.appendChild(plusButton);
-    document.getElementById("landAssignmentsList")!.appendChild(assignmentTypeDiv)
+    if (!fromItem) {
+        const plusButton = document.createElement("button");
+        plusButton.textContent = "+";
+        plusButton.addEventListener("click", () => {
+            if (landAssignments - getTotalAssignedLand() <= 0) return;
+            landAssignedTypes[assignmentType.id] ??= 0;
+            landAssignedTypes[assignmentType.id] += 1;
+            countSpan.textContent = landAssignedTypes[assignmentType.id] + "";
+            minusButton.disabled = false;
+            document.getElementById("availableLandAssignmentsSpan")!.textContent = "Available land assignments: " + (landAssignments - getTotalAssignedLand());    
+        })
+        assignmentTypeDiv.appendChild(plusButton);
+    }
+    document.getElementById("landAssignmentsList")!.appendChild(assignmentTypeDiv);
+}
+for (const assignmentType of landAssignmentTypes) {
+    createAssignmentType(assignmentType, false);
 }
 const sellAmounts = [1, 10, 100];
 
 const createInventoryElem = (id: string) => {
-    const itemDiv = document.createElement("li");
-    itemDiv.id = "inventory." + id + ".item";
+    const itemData = items.find(item => item.id === id);
+    if (itemData?.building) return createAssignmentType(itemData, true)
+    const itemLi = document.createElement("li");
+    itemLi.id = "inventory." + id + ".item";
     const itemTopInfo = document.createElement("div")
-    itemTopInfo.textContent = `${items.find(item => item.id === id)?.name} (${items.find(item => item.id === id)?.research} research each): `
-    const itemSpan = document.createElement("span")
-    itemSpan.classList.add("inventoryItemAmount")
-    itemSpan.id = "inventory." + id
-    itemTopInfo.appendChild(itemSpan)
-    itemDiv.appendChild(itemTopInfo);
+    itemTopInfo.textContent = `${items.find(item => item.id === id)?.name} (${items.find(item => item.id === id)?.research} research each): `;
+    const itemSpan = document.createElement("span");
+    itemSpan.classList.add("inventoryItemAmount");
+    itemSpan.id = "inventory." + id;
+    itemTopInfo.appendChild(itemSpan);
+    itemLi.appendChild(itemTopInfo);
     const sellRow = document.createElement("div")
-    if (items.find(item => item.id === id)?.usable) {
+    if (itemData?.usable) {
         const useButton = document.createElement("button");
         useButton.textContent = "Use";
         useButton.addEventListener("click", () => {
             if (inventory[id] > 0) {
-                itemUse[id]?.()
+                itemUse[id]?.();
                 inventory[id] -= 1;
-                itemSpan.style.setProperty("--num", inventory[id] + "")
+                itemSpan.style.setProperty("--num", inventory[id] + "");
                 itemSpan.setAttribute("aria-label", inventory[id] + "");
                 if (inventory[id] === 0) {
-                    itemDiv.remove();
-                }
-            }
-        })
-        sellRow.appendChild(useButton)
-    }
+                    itemLi.remove();
+                };
+            };
+        });
+        sellRow.appendChild(useButton);
+    };
     for (const sellAmount of sellAmounts) {
         const analyzeButton = document.createElement("button");
         analyzeButton.textContent = "Analyze " + sellAmount + "x";
         analyzeButton.classList.add("analyzeButton")
-        analyzeButton.dataset.sellAmount = sellAmount + ""
+        analyzeButton.dataset.sellAmount = sellAmount + "";
         analyzeButton.addEventListener("click", () => {
             if (inventory[id] >= sellAmount) {
                 inventory[id] -= sellAmount;
-                researchPoints += sellAmount * (items.find(item => item.id === id)?.research ?? 0);
-                updateInventoryItem(id)
-            }
-        })
-        sellRow.appendChild(analyzeButton)
+                researchPoints += sellAmount * (itemData?.research ?? 0);
+                updateInventoryItem(id);
+            };
+        });
+        sellRow.appendChild(analyzeButton);
     }
-    itemDiv.appendChild(sellRow);
-    document.getElementById("inventoryList")?.appendChild(itemDiv)
-}
+    itemLi.appendChild(sellRow);
+    document.getElementById("inventoryList")?.appendChild(itemLi);
+};
 
+const addInventoryItem = (itemId: string, amount: number) => {
+    const itemData = items.find(item => item.id === itemId)
+    inventory[itemId] += amount
+    if (itemData?.building) {
+        landAssign[itemId]?.(amount);
+    }
+}
 const updateInventoryItem = (itemId: string) => {
     const itemSpan = document.getElementById("inventory." + itemId)!;
     itemSpan.style.setProperty("--num", inventory[itemId] + "");
     itemSpan.setAttribute("aria-label", inventory[itemId] + "");
-    if (inventory[itemId] === 0) itemSpan.remove();
 }
 
 const tick = () => {
@@ -1158,5 +1214,9 @@ const tick = () => {
         woodPlankSpan.setAttribute("aria-label", inventory.wooden_plank + "");
         inventory.wood -= woodenPlanksGained * 500;
     };
+    for (const demolishButton of Array.from(document.getElementsByClassName("assignmentItemDemolish")) as HTMLButtonElement[]) {
+        const itemId = demolishButton.dataset.id as unknown as number
+        demolishButton.disabled = inventory[itemId] <= 0
+    }
     localStorage.setItem("save", JSON.stringify({researched, cats, foodStock, researchPoints, starvationPoints, comfort, inventory, landSize, landAssignedTypes}));
 }

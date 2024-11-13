@@ -157,6 +157,10 @@ button:disabled {
     flex-direction: column;
 }
 
+#inventory > ul > li[hidden] {
+    display: none;
+}
+
 #toolsRow {
     display: flex;
     gap: 1rem;
@@ -207,11 +211,11 @@ button:disabled {
 }
   
 
-#foodStock, #researchPoints, .inventoryItemAmount, #comfort {
+#foodStock, #researchPoints, .inventoryItemAmount, #comfort, .assignmentItemCount {
     transition: --num 1s linear;
     counter-reset: num var(--num);
 }
-#foodStock::after, #researchPoints::after, .inventoryItemAmount::after, #comfort::after {
+#foodStock::after, #researchPoints::after, .inventoryItemAmount::after, #comfort::after, .assignmentItemCount::after {
     content: counter(num);
     -webkit-user-select: text;
     user-select: text;
