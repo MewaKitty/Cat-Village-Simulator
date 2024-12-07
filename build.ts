@@ -1,8 +1,10 @@
-await Bun.build({
+const result = await Bun.build({
     entrypoints: ["./src/index.ts"],
     outdir: "./build",
     sourcemap: "linked"
 });
+
+if (!result.success) throw result.logs[0];
 
 for (const file of ["index.html", "styles.css", "cat_names.txt"]) {
     await Bun.write("./build/" + file, Bun.file("./" + file))

@@ -3,6 +3,7 @@ import { technology } from "./research.ts"
 import { getTotalAssignedLand } from "./assignments.ts"
 import { createInventoryElem } from "./items/create.ts"
 import { items } from "./items/data.ts"
+import { recalculateCatSkills } from "./cats.ts"
 
 let lastCatStarve = Date.now();
 const seasons = [
@@ -40,7 +41,7 @@ export const tick = () => {
         return;
     }
     let waterLeft = game.inventory.water_cup ?? 0;
-    const foodHunted = Math.min(50 * 2 ** game.landSize, Math.floor((seasons[season].cold ? 0.1 : 1) * Math.floor(game.cats.filter(cat => cat.role === "Hunter" && (seasons[season].hot ? --waterLeft > 0 : true)).reduce((l, c, i) => l + Math.floor(Math.random() * c.abilities.strength) + c.abilities.strength, 0) * ((game.comfort / 100) + 1))));
+    const foodHunted = Math.min(50 * 2 ** game.landSize, Math.floor((seasons[season].cold ? 0.1 : 1) * Math.floor(game.cats.filter(cat => cat.role === "Hunter" && (seasons[season].hot ? --waterLeft > 0 : true)).reduce((l, c, i) => l + Math.floor(Math.random() * c.abilities.strength) + c.abilities.strength, 0) * ((game.comfort / 20) + 1))));
     console.log(waterLeft)
     const requiredFood = game.cats.length * 10 * (game.raid ? 1.5 : 1)
     if (foodHunted - requiredFood > 0) {
@@ -49,7 +50,7 @@ export const tick = () => {
             if (game.starvationPoints < 0) game.starvationPoints = 0;
         } else {
             game.foodStock.push(foodHunted - requiredFood);
-        }
+        };
     }
     if (foodHunted - requiredFood < 0) {
         if (game.foodStock.length > 0) {
@@ -98,15 +99,40 @@ export const tick = () => {
     document.getElementById("foodStock")!.style.setProperty("--num", displayFoodStock)
     document.getElementById("foodStock")!.setAttribute("aria-label", displayFoodStock)
     const defense = game.cats.filter(cat => cat.role === "Guard").reduce((l, c, i) => l + Math.floor((c.abilities.strength + c.abilities.agility) / 5), 0)
-    document.getElementById("defense")!.textContent = defense + ""
-    game.researchPoints += game.cats.filter(cat => cat.role === "Researcher").reduce((l, c, i) => l + Math.floor(c.abilities.intelligence * Math.random() * game.comfort / 5), 0)
+    document.getElementById("defense")!.textContent = defense + "";
+    let researchGained = 0;
+    for (const cat of game.cats.filter(cat => cat.role === "Researcher")) {
+        let currentGain = Math.floor(cat.abilities.intelligence * Math.random() * ((game.comfort / 20) + 1));
+        cat.skills ??= {};
+        cat.skills.researching ??= {"level": 0, "xp": 0};
+        if (Math.random() < 0.1) cat.skills.researching.xp += 1;
+        if (cat.skills.researching.xp >= 100 && cat.skills.researching.level < 3) {
+            cat.skills.researching.level = 3;
+            cat.skills.researching.xp = 0;
+        };
+        recalculateCatSkills(cat);
+        switch (cat.skills.researching.level) {
+            case 1:
+                currentGain *= 1.1;
+                break;
+            case 2:
+                currentGain *= 1.5;
+                break;
+            case 3:
+                currentGain *= 2;
+                break;
+        };
+        currentGain = Math.floor(currentGain);
+        researchGained += currentGain;
+    }
+    game.researchPoints += researchGained;
     const maxResearchPoints = (game.landAssignedTypes.research_library ?? 0) * 200 + 200
     if (game.researchPoints > maxResearchPoints) game.researchPoints = maxResearchPoints;
     document.getElementById("maxResearchPoints")!.textContent = maxResearchPoints + ""
     document.getElementById("researchPoints")!.style.setProperty("--num", game.researchPoints + "")
     document.getElementById("researchPoints")!.setAttribute("aria-label", game.researchPoints + "")
-    document.getElementById("comfort")!.style.setProperty("--num", game.comfort + "")
-    document.getElementById("comfort")!.setAttribute("aria-label", game.comfort + "")
+    document.getElementById("comfort")!.style.setProperty("--num", game.comfort * 5 + "");
+    document.getElementById("comfort")!.setAttribute("aria-label", game.comfort * 5 + "");
     if (game.foodStock.reduce((l, c, i) => l + c, 0) > 500 && Math.random() < 0.01 / defense && !game.raid) {
         document.getElementById("raid")!.hidden = false;
         document.getElementById("raidText")!.textContent = "You are being raided. You will use up 1.5x the amount of prey during the raid."
@@ -144,7 +170,7 @@ export const tick = () => {
     document.getElementById("maxPrey")!.textContent = 50 * 2 ** game.landSize + ""
     document.getElementById("expand")!.textContent = "Expand: " + 100 * 3 ** game.landSize + " research points";
     (document.getElementById("expand") as HTMLButtonElement).disabled = game.researchPoints < 100 * 3 ** game.landSize
-
+    
     document.getElementById("availableLandAssignmentsSpan")!.textContent = "Available land assignments: " + (game.landAssignments - getTotalAssignedLand());
 
     if (game.inventory.water_cup) {
@@ -154,7 +180,30 @@ export const tick = () => {
         waterCupSpan.setAttribute("aria-label", game.inventory.water_cup + "")
     }
 
-    const woodGained = game.cats.filter(cat => cat.role === "Tree Chopper").reduce((l, c, i) => l + Math.floor(Math.random() * 5 * Math.floor(c.abilities.strength / 5)), 0)
+    let woodGained = 0;
+    for (const cat of game.cats.filter(cat => cat.role === "Tree Chopper")) {
+        woodGained += Math.floor(Math.random() * 5 * Math.floor(cat.abilities.strength / 5));
+        cat.skills ??= {};
+        cat.skills.treeChopping ??= {"level": 0, "xp": 0};
+        if (Math.random() < 0.1) cat.skills.treeChopping.xp += 1;
+        if (cat.skills.treeChopping.xp >= 100 && cat.skills.treeChopping.level < 3) {
+            cat.skills.treeChopping.level = 3;
+            cat.skills.treeChopping.xp = 0;
+        };
+        recalculateCatSkills(cat);
+        switch (cat.skills.treeChopping.xp) {
+            case 1:
+                woodGained *= 1.1;
+                break;
+            case 2:
+                woodGained *= 1.5;
+                break;
+            case 3:
+                woodGained *= 2;
+                break;
+        }
+        woodGained = Math.floor(woodGained);
+    };
     if (woodGained) {
         game.inventory.wood ??= 0;
         game.inventory.wood += woodGained;
@@ -165,13 +214,36 @@ export const tick = () => {
         woodSpan.style.setProperty("--num", game.inventory.wood + "")
         woodSpan.setAttribute("aria-label", game.inventory.wood + "")
     }
-    const stoneGained = game.cats.filter(cat => cat.role === "Miner").reduce((l, c, i) => l + Math.floor(Math.random() * 5 * Math.floor(c.abilities.strength / 5)), 0)
+    let stoneGained = 0;
+    for (const cat of game.cats.filter(cat => cat.role === "Tree Chopper")) {
+        stoneGained += Math.floor(Math.random() * 5 * Math.floor(cat.abilities.strength / 5));
+        cat.skills ??= {};
+        cat.skills.mining ??= {"level": 0, "xp": 0};
+        if (Math.random() < 0.1) cat.skills.mining.xp += 1;
+        if (cat.skills.mining.xp >= 100 && cat.skills.mining.level < 3) {
+            cat.skills.mining.level = 3;
+            cat.skills.mining.xp = 0;
+        };
+        recalculateCatSkills(cat);
+        switch (cat.skills.mining.xp) {
+            case 1:
+                stoneGained *= 1.1;
+                break;
+            case 2:
+                stoneGained *= 1.5;
+                break;
+            case 3:
+                stoneGained *= 2;
+                break;
+        }
+        stoneGained = Math.floor(stoneGained);
+    };
     if (stoneGained) {
         game.inventory.stone ??= 0;
         game.inventory.stone += stoneGained;
         if (!document.getElementById("inventory.stone")) {
             createInventoryElem("stone")
-        }
+        };
         const stoneSpan = document.getElementById("inventory.stone")!
         stoneSpan.style.setProperty("--num", game.inventory.stone + "");
         stoneSpan.setAttribute("aria-label", game.inventory.stone + "");
@@ -212,4 +284,6 @@ export const tick = () => {
         landSize: game.landSize,
         landAssignedTypes: game.landAssignedTypes
     }));
+    console.log(localStorage.getItem("save"))
+    console.log("cats: " + game.cats.length)
 }

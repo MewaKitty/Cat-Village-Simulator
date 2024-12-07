@@ -24,7 +24,12 @@ export interface Cat {
     id: string,
     name: string,
     abilities: Record<string, number>,
-    role: string
+    role: string,
+    xp?: number,
+    skills: Record<string, {
+        level: number,
+        xp: number
+    }>
 }
 export interface PartialCat {
     id: string,
@@ -69,8 +74,12 @@ export const createCatElement = (cat: Cat) => {
     roleSelect.addEventListener("change", () => {
         cat.role = roleSelect.options[roleSelect.selectedIndex].text;
     });
+    const skillsList = document.createElement("ul")
+    skillsList.classList.add("skillsList")
+    catElement.appendChild(skillsList)
 };
 
+export const getCatElement = (id: string) => document.getElementById(id + ".catBox")
 export const createNewRole = (roleName: string) => {
     roles.push(roleName)
     for (const cat of game.cats) {
@@ -80,3 +89,29 @@ export const createNewRole = (roleName: string) => {
         catElement.querySelector("select")?.appendChild(roleOption);
     }
 }
+
+const skills = [
+    {
+        "id": "treeChopping",
+        "name": "Tree Chopping"
+    },
+    {
+        "id": "mining",
+        "name": "Mining"
+    },
+    {
+        "id": "researching",
+        "name": "Researching"
+    }
+]
+
+export const recalculateCatSkills = (cat: Cat) => {
+    const catElement = document.getElementById(cat.id + ".catBox");
+    const skillsList = catElement?.getElementsByClassName("skillsList")[0]!
+    skillsList.textContent = "";
+    for (const [id, skill] of Object.entries(cat.skills)) {
+        const skillElem = document.createElement("li");
+        skillElem.textContent = `${skills.find(skillData => skillData.id === id)?.name}: Level ${skill.level} (${skill.xp} xp)`
+        skillsList?.appendChild(skillElem);
+    };
+};

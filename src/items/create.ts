@@ -1,11 +1,12 @@
 import { createAssignmentType } from "../assignments.ts"
-import { updateInventoryItem } from "./updateInventoryItem.ts"
+import { updateInventoryItem } from "./update.ts"
 import { items, itemUse } from "./data.ts"
 import { game } from "../game.ts"
 
 const sellAmounts = [1, 10, 100];
 
 export const createInventoryElem = (id: string) => {
+    if (document.getElementById("inventory." + id)) return
     const itemData = items.find(item => item.id === id);
     if (itemData?.building) return createAssignmentType(itemData, true)
     const itemLi = document.createElement("li");

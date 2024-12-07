@@ -1,4 +1,4 @@
-import { randomCat, abilities, createCatElement, roles } from "./cats.ts"
+import { randomCat, abilities, createCatElement, roles, recalculateCatSkills } from "./cats.ts"
 import type { PartialCat } from "./cats.ts"
 import { game } from "./game.ts"
 import { tick } from "./tick.ts"
@@ -15,48 +15,49 @@ document.getElementById("start")?.addEventListener("click", () => {
     const catGridElement = document.createElement("div");
     catGridElement.classList.add("catGrid");
     document.getElementById("welcomeScreen")!.appendChild(catGridElement);
-    const recruitedCats: PartialCat[] = []
+    const recruitedCats: PartialCat[] = [];
     for (let i = 0; i < 12; i++) {
         const catElement = document.createElement("div");
-        catElement.classList.add("catBox")
-        const cat = randomCat()
+        catElement.classList.add("catBox");
+        const cat = randomCat();
         catElement.innerHTML = `<b>${cat.name}</b>
         ${Object.entries(cat.abilities).map(([abilityId, abilityNumber]) => {
             return `<label id="${cat.id}.${abilityId}.label" for="${cat.id}.${abilityId}">${abilities.find(ability => ability.id === abilityId)?.name + ": " + abilityNumber}</label><meter id="${cat.id}.${abilityId}" min="1" max="20" value="${abilityNumber}" aria-labelledby="${cat.id}.${abilityId}.label"></meter>`
-        }).join("")}`
+        }).join("")}`;
         const recruitButton = document.createElement("button");
         recruitButton.textContent = "Recruit";
-        catElement.appendChild(recruitButton)
+        catElement.appendChild(recruitButton);
         recruitButton.addEventListener("click", () => {
             const catIndex = recruitedCats.findIndex(currentCat => currentCat.id === cat.id)
             if (catIndex !== -1) {
                 recruitButton.textContent = "Recruit"
-                recruitedCats.splice(catIndex, 1)
+                recruitedCats.splice(catIndex, 1);
             } else {
                 if (recruitedCats.length >= 3) return;
-                recruitButton.textContent = "Unrecruit"
-                recruitedCats.push(cat)
+                recruitButton.textContent = "Unrecruit";
+                recruitedCats.push(cat);
             }
             recruitCountSpan.textContent = recruitedCats.length + "/3 cats recruited"
-            startJourneyButton.textContent = "Start your journey"
-        })
-        catGridElement.appendChild(catElement)
-    }
-    const startJourneyButton = document.createElement("button")
-    startJourneyButton.textContent = "Start your journey"
-    startJourneyButton.classList.add("bigButton")
-    document.getElementById("welcomeScreen")!.appendChild(startJourneyButton)
+            startJourneyButton.textContent = "Start your journey";
+        });
+        catGridElement.appendChild(catElement);
+    };
+    const startJourneyButton = document.createElement("button");
+    startJourneyButton.textContent = "Start your journey";
+    startJourneyButton.classList.add("bigButton");
+    document.getElementById("welcomeScreen")!.appendChild(startJourneyButton);
     startJourneyButton.addEventListener("click", () => {
         if (recruitedCats.length < 3) {
             startJourneyButton.textContent = "Start your journey - recruit 3 cats first!"
             return
         }
-        game.cats = recruitedCats.map(cat => ({...cat, role: "Hunter"}))
+        game.cats = recruitedCats.map(cat => ({...cat, skills: {}, role: "Hunter"}))
         document.getElementById("welcomeScreen")!.hidden = true;
         document.getElementById("game")!.hidden = false;
         for (const cat of game.cats) {
             createCatElement(cat);
         };
+        game.landAssignments = 5 ** game.landSize;
         setInterval(tick, 1000);
         for (const technologyItem of technology) {
             setupTechnologyItem(technologyItem)
@@ -68,6 +69,7 @@ if (!localStorage.getItem("save")) document.getElementById("continue")!.hidden =
 
 document.getElementById("continue")?.addEventListener("click", () => {
     const save = JSON.parse(localStorage.getItem("save")!) //, JSON.stringify({researched, cats, foodStock, researchPoints, starvationPoints, comfort, inventory}))
+    if (save.cats.length === 0) return document.getElementById("continue")!.textContent = "No cats?"
     game.researched = save.researched;
     game.cats = save.cats;
     game.foodStock = save.foodStock;
@@ -77,8 +79,14 @@ document.getElementById("continue")?.addEventListener("click", () => {
     game.inventory = save.inventory;
     game.landSize = save.landSize;
     game.landAssignments = 5 ** game.landSize;
+    game.landAssignedTypes = save.landAssignedTypes;
+    for (const [id, count] of Object.entries(save.landAssignedTypes)) {
+        if (document.querySelector("[data-assignment-id=" + id + "]")) document.querySelector("[data-assignment-id=" + id + "]")!.textContent = count + ""
+    }
+    console.log(game.landAssignedTypes)
     for (const cat of game.cats) {
         createCatElement(cat);
+        recalculateCatSkills(cat);
     };
     for (const technologyItem of technology) {
         setupTechnologyItem(technologyItem);

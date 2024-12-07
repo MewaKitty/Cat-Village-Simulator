@@ -67,6 +67,11 @@ button:disabled {
     box-sizing: border-box;
 }
 
+.catBox.runningErrand {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .catGrid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -179,7 +184,7 @@ button:disabled {
     border-radius: 0.1rem;
     padding: 1rem;
 }
-#recruitmentDiv, #craftingDiv, #relationsDiv {
+#recruitmentDiv, #craftingDiv, #relationsDiv, #errandsDiv {
     border-radius: 0.1rem;
     padding: 1rem;
     position: relative;
@@ -200,6 +205,17 @@ button:disabled {
     flex-direction: column;
     gap: 0.25rem;
 }
+#errandsDiv {
+    border: 2px solid darkmagenta;
+    background: #ffddff;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+meter::-webkit-meter-optimum-value, meter::-webkit-meter-suboptimum-value, meter::-webkit-meter-even-less-good-value {
+    transition: 1s width;
+}
+
 #relationsDiv .itemSpan {
     display: flex;
     gap: 1ch;

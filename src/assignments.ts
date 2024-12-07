@@ -1,11 +1,24 @@
 import { game } from "./game.ts"
 import { updateInventoryItem } from "./items/update.ts"
+import { items } from "./items/data.ts"
 
-export const getTotalAssignedLand = () => Object.values(game.landAssignedTypes).reduce((l, c) => l + c, 0)
+export const getTotalAssignedLand = () => {
+    const nonItem = Object.values(game.landAssignedTypes).reduce((l, c) => l + c, 0)
+    let itemForm = 0;
+    for (const [id, count] of Object.entries(game.inventory)) {
+        const itemData = items.find(item => item.id === id)
+        if (!itemData || !itemData.building) continue
+        itemForm += count
+    };
+    return nonItem + itemForm
+}
 
 export const landAssign: Record<string, (amount: number) => void> = {
-    "basic_den": (amount) => {
+    "grass_den": (amount) => {
         game.comfort += 1 * amount;
+    },
+    "basic_den": (amount) => {
+        game.comfort += 2 * amount;
     },
     "wooden_den": (amount) => {
         game.comfort += 5 * amount;
@@ -15,8 +28,11 @@ export const landAssign: Record<string, (amount: number) => void> = {
     },
 }
 const landUnassign: Record<string, (amount: number) => void> = {
-    "basic_den": (amount) => {
+    "grass_den": (amount) => {
         game.comfort -= 1 * amount;
+    },
+    "basic_den": (amount) => {
+        game.comfort -= 2 * amount;
     },
     "wooden_den": (amount) => {
         game.comfort -= 5 * amount;
@@ -51,7 +67,10 @@ export const createAssignmentType = (assignmentType: AssignmentType, fromItem: b
     const countSpan = document.createElement("span");
     countSpan.textContent = fromItem ? "" : "0"
     if (fromItem) countSpan.classList.add("assignmentItemCount");
-    if (fromItem) countSpan.id = "inventory." + assignmentType.id;
+    if (fromItem) {
+        countSpan.id = "inventory." + assignmentType.id;
+    }
+    countSpan.dataset.assignmentId = assignmentType.id;
     nameAndCount.appendChild(countSpan)
     assignmentTypeDiv.appendChild(nameAndCount);
     const minusButton = document.createElement("button");
@@ -63,7 +82,6 @@ export const createAssignmentType = (assignmentType: AssignmentType, fromItem: b
             if (game.inventory[assignmentType.id] <= 0) return;
             game.inventory[assignmentType.id] -= 1;
             updateInventoryItem(assignmentType.id);
-            landUnassign[assignmentType.id]?.(1);
         } else {
             if (!game.landAssignedTypes[assignmentType.id]) return;
             game.landAssignedTypes[assignmentType.id] -= 1;
@@ -71,6 +89,7 @@ export const createAssignmentType = (assignmentType: AssignmentType, fromItem: b
             if (game.landAssignedTypes[assignmentType.id] === 0) minusButton.disabled = true;
             document.getElementById("availableLandAssignmentsSpan")!.textContent = "Available land assignments: " + (game.landAssignments - getTotalAssignedLand());
         };
+        landUnassign[assignmentType.id]?.(1);
     });
     assignmentTypeDiv.appendChild(minusButton);
     if (!fromItem) {
@@ -82,7 +101,8 @@ export const createAssignmentType = (assignmentType: AssignmentType, fromItem: b
             game.landAssignedTypes[assignmentType.id] += 1;
             countSpan.textContent = game.landAssignedTypes[assignmentType.id] + "";
             minusButton.disabled = false;
-            document.getElementById("availableLandAssignmentsSpan")!.textContent = "Available land assignments: " + (game.landAssignments - getTotalAssignedLand());    
+            document.getElementById("availableLandAssignmentsSpan")!.textContent = "Available land assignments: " + (game.landAssignments - getTotalAssignedLand()); 
+            landAssign[assignmentType.id]?.(1);   
         })
         assignmentTypeDiv.appendChild(plusButton);
     }
