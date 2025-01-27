@@ -82,6 +82,7 @@ document.getElementById("continue")?.addEventListener("click", () => {
     document.getElementById("researchTaxAmount")!.textContent = game.landSize * 100 + "";
     game.landAssignments = 5 ** game.landSize;
     game.landAssignedTypes = save.landAssignedTypes;
+    game.claimedQuests = save.claimedQuests;
     for (const [id, count] of Object.entries(save.landAssignedTypes)) {
         if (document.querySelector("[data-assignment-id=" + id + "]")) document.querySelector("[data-assignment-id=" + id + "]")!.textContent = count + ""
     }
@@ -174,3 +175,83 @@ for (const tabList of Array.from(document.querySelectorAll(`[role="tablist"]`)))
         };
     });
 }
+
+const quests = [
+    {
+        "id": "reach-5-cats",
+        "name": "Reach 5 cats",
+        "requirements": {
+            "cats": 5
+        },
+        "rewards": {
+            "research": 500
+        }
+    },
+    {
+        "id": "reach-50-cats",
+        "name": "Reach 50cats",
+        "requirements": {
+            "cats": 50
+        },
+        "rewards": {
+            "research": 5000
+        }
+    },
+    {
+        "id": "reach-250-cats",
+        "name": "Reach 250 cats",
+        "requirements": {
+            "cats": 250
+        },
+        "rewards": {
+            "research": 50000
+        }
+    },
+]
+document.getElementById("visitQuestOffice")?.addEventListener("click", () => {
+    if (document.getElementById("questsDiv")) return;
+    const questsDiv = document.createElement("div");
+    questsDiv.id = "questsDiv";
+    questsDiv.innerHTML = `<b>Quests</b>
+    <p>Here are some of the quests you can perform.</p>`;
+    document.getElementById("informationList")!.appendChild(questsDiv);
+    const closeButton = document.createElement("div");
+    closeButton.classList.add("closeButton")
+    closeButton.setAttribute("aria-label", "Close")
+    closeButton.textContent = "X"
+    closeButton.addEventListener("click", () => {
+        questsDiv.remove();
+    })
+    questsDiv.appendChild(closeButton);
+    for (const quest of quests) {
+        const questDiv = document.createElement("div")
+        questDiv.textContent = quest.name;
+        questDiv.classList.add("quest")
+        questsDiv.appendChild(questDiv)
+        const claimButton = document.createElement("button")
+        claimButton.textContent = "Claim"
+        for (const [type, requirement] of Object.entries(quest.requirements)) {
+            if (type === "cats") {
+                if (game.cats.length < requirement) claimButton.disabled = true;
+            }
+        }
+        for (const [type, reward] of Object.entries(quest.rewards)) {
+            if (type === "research") {
+                const rewardSpan = document.createElement("span")
+                rewardSpan.textContent = "+" + reward + " research"
+                questDiv.appendChild(rewardSpan)
+            }
+        }
+        if (game.claimedQuests.includes(quest.id)) claimButton.disabled = true;
+        questDiv.appendChild(claimButton)
+        claimButton.addEventListener("click", () => {
+            for (const [type, reward] of Object.entries(quest.rewards)) {
+                if (type === "research") {
+                    game.researchPoints += reward;
+                }
+            }
+            claimButton.disabled = true;
+            game.claimedQuests.push(quest.id)
+        })
+    }
+})

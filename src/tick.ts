@@ -284,7 +284,8 @@ export const tick = () => {
         comfort: game.comfort,
         inventory: game.inventory,
         landSize: game.landSize,
-        landAssignedTypes: game.landAssignedTypes
+        landAssignedTypes: game.landAssignedTypes,
+        claimedQuests: game.claimedQuests
     }));
     console.log(localStorage.getItem("save"))
     console.log("cats: " + game.cats.length)

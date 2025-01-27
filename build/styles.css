@@ -195,7 +195,7 @@ button:disabled {
     border-radius: 0.1rem;
     padding: 1rem;
 }
-#recruitmentDiv, #craftingDiv, #relationsDiv, #errandsDiv {
+#recruitmentDiv, #craftingDiv, #questsDiv, #relationsDiv, #errandsDiv {
     border-radius: 0.1rem;
     padding: 1rem;
     position: relative;
@@ -208,6 +208,14 @@ button:disabled {
 #craftingDiv {
     border: 2px solid darkgoldenrod;
     background: #ffffdd;
+}
+#questsDiv {
+    border: 2px solid darkorchid;
+    background: #ffddff;
+}
+.quest {
+    display: flex;
+    gap: 1rem;
 }
 #relationsDiv {
     border: 2px solid darkcyan;
