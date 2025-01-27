@@ -51,13 +51,14 @@ document.getElementById("start")?.addEventListener("click", () => {
             startJourneyButton.textContent = "Start your journey - recruit 3 cats first!"
             return
         }
-        game.cats = recruitedCats.map(cat => ({...cat, skills: {}, role: "Hunter"}))
+        game.cats = recruitedCats.map(cat => ({...cat, skills: {}, role: "Hunter"}));
         document.getElementById("welcomeScreen")!.hidden = true;
         document.getElementById("game")!.hidden = false;
         for (const cat of game.cats) {
             createCatElement(cat);
         };
         game.landAssignments = 5 ** game.landSize;
+        document.getElementById("researchTaxAmount")!.textContent = game.landSize * 100 + "";
         setInterval(tick, 1000);
         for (const technologyItem of technology) {
             setupTechnologyItem(technologyItem)
@@ -78,6 +79,7 @@ document.getElementById("continue")?.addEventListener("click", () => {
     game.comfort = save.comfort;
     game.inventory = save.inventory;
     game.landSize = save.landSize;
+    document.getElementById("researchTaxAmount")!.textContent = game.landSize * 100 + "";
     game.landAssignments = 5 ** game.landSize;
     game.landAssignedTypes = save.landAssignedTypes;
     for (const [id, count] of Object.entries(save.landAssignedTypes)) {
@@ -121,6 +123,7 @@ document.getElementById("expand")!.addEventListener("click", () => {
     game.researchPoints -= 100 * 3 ** game.landSize;
     game.landSize += 1;
     game.landAssignments = 5 ** game.landSize;
+    document.getElementById("researchTaxAmount")!.textContent = game.landSize * 100 + "";
 })
 
 const changeTabs = (e: Event) => {
@@ -168,6 +171,6 @@ for (const tabList of Array.from(document.querySelectorAll(`[role="tablist"]`)))
   
             tabs[tabFocus].setAttribute("tabindex", "0");
             (tabs[tabFocus] as HTMLButtonElement).focus();
-        }
+        };
     });
 }

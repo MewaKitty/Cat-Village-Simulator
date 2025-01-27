@@ -12,7 +12,8 @@ export const game: {
     foodStock: number[],
     landAssignedTypes: Record<string, number>,
     researched: Record<string, boolean>,
-    cats: Cat[]
+    cats: Cat[],
+    recruitmentCooldown: number
 } = {
     catDollars: 0,
     researchPoints: 0,
@@ -25,7 +26,8 @@ export const game: {
     foodStock: [],
     landAssignedTypes: {},
     researched: {},
-    cats: []
+    cats: [],
+    recruitmentCooldown: 60
 }
 
 game.inventory.wood = 100000000;

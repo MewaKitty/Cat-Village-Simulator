@@ -161,6 +161,8 @@ export const tick = () => {
             season += 1;
         }
         secondsUntilNextSeason = seasonLength;
+        game.researchPoints -= game.landSize * 100;
+        if (game.researchPoints < 0) game.researchPoints = 0;
     }
     if (seasons[season].class) document.getElementById("seasonBox")!.className = seasons[season].class!;
     document.getElementById("seasonName")!.textContent = seasons[season].name;
@@ -242,9 +244,9 @@ export const tick = () => {
         game.inventory.stone ??= 0;
         game.inventory.stone += stoneGained;
         if (!document.getElementById("inventory.stone")) {
-            createInventoryElem("stone")
+            createInventoryElem("stone");
         };
-        const stoneSpan = document.getElementById("inventory.stone")!
+        const stoneSpan = document.getElementById("inventory.stone")!;
         stoneSpan.style.setProperty("--num", game.inventory.stone + "");
         stoneSpan.setAttribute("aria-label", game.inventory.stone + "");
     };
